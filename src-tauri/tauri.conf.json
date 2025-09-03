@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "QuSC-DB",
+  "version": "0.1.0",
+  "identifier": "com.qusc.db",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "QuSC-DB",
+        "width": 1100,
+        "height": 700,
+        "minWidth": 1100,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "withGlobalTauri": true
+  },
+  "plugins": {},
+  "bundle": {
+    "active": true,
+    "targets": ["msi"],
+    "category": "DeveloperTool",
+    "shortDescription": "轻量级AI SQL客户端",
+    "longDescription": "支持MySQL和Redis的轻量级AI辅助SQL客户端",
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  }
+}

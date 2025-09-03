@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run dev:*)",
+      "Bash(npx vite:*)",
+      "Bash(npm run tauri:*)",
+      "Bash(taskkill:*)",
+      "Bash(npm run build:*)",
+      "Bash(del:*)",
+      "Bash(ren:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(for component in AIChatMode TableSelector)",
+      "Bash(do echo \"=== $component ===\")",
+      "Bash(done)",
+      "Bash(for component in QueryHistoryPanel ImportDialog HistoryItem HistoryEditDialog DataExportDialog DataImportDialog)",
+      "Bash(for component in SettingSection FontSizeControl FontFamilySelector ThemeSelector BehaviorSettings EditorPreview)",
+      "Bash(for component in RedisCommandsHelper VirtualResultsTable ResultsTable StatusIndicator)",
+      "Bash(for component in QueryTabs WorkspaceTabs PanelHeader EmptyState)",
+      "Bash(cargo check:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir:*)",
+      "Bash(node:*)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(timeout 15 npm run dev -- --port 5174)",
+      "Bash(timeout 15 npm run dev -- --port 5175)"
+    ],
+    "deny": []
+  }
+}

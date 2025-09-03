@@ -1,0 +1,57 @@
+{
+  "name": "qusc-db",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Modern database management tool built with Vue 3 and Tauri",
+  "author": "QuSC-DB Team",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "lint": "eslint src --ext .vue,.js,.ts",
+    "lint:fix": "eslint src --ext .vue,.js,.ts --fix",
+    "format": "prettier --write src/**/*.{vue,js,ts,scss,css}"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/lang-sql": "^6.9.1",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@tauri-apps/api": "^2.7.0",
+    "@vueuse/core": "^10.7.0",
+    "codemirror": "^6.0.2",
+    "marked": "^16.1.2",
+    "pinia": "^2.1.7",
+    "sql-formatter": "^15.6.6",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.20.0",
+    "prettier": "^3.2.0",
+    "sass": "^1.69.0",
+    "vite": "^5.0.0"
+  },
+  "keywords": [
+    "database",
+    "management",
+    "vue3",
+    "tauri",
+    "sql",
+    "ai-assistant"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/qusc-db.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/qusc-db/issues"
+  },
+  "homepage": "https://github.com/your-org/qusc-db#readme"
+}
