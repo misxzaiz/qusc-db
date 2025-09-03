@@ -29,7 +29,7 @@ QuSC-DB 是一个基于 Tauri + Web 技术栈的轻量级 AI 辅助 SQL 客户�
 ### 1. 克隆项目
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:misxzaiz/qusc-db.git
 cd qusc-db
 ```
 
@@ -37,9 +37,7 @@ cd qusc-db
 
 ```bash
 # 安装前端依赖
-cd ui
 npm install
-cd ..
 ```
 
 ### 3. 开发模式运行
@@ -47,23 +45,19 @@ cd ..
 **方式一：分别启动前后端**
 ```bash
 # 启动前端开发服务器
-cd ui
 npm run dev
 
 # 在新终端中启动后端 Tauri 应用
-cd server
 cargo tauri dev
 ```
 
 **方式二：从后端目录启动（推荐）**
 ```bash
-cd server
 cargo tauri dev
 ```
 
 ### 4. 构建生产版本
 
 ```bash
-cd server
 cargo tauri build
 ```
