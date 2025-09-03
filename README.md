@@ -2,6 +2,8 @@
 
 QuSC-DB 是一个基于 Tauri + Web 技术栈的轻量级 AI 辅助 SQL 客户端，支持 MySQL 和 Redis 数据库，集成 DeepSeek AI 模型辅助 SQL 操作。
 
+![QuSC-DB 界面预览](doc/assets/img.png)
+
 ## ✨ 特性
 
 - 🚀 **轻量级**: 基于 Tauri，包体积小，启动速度快
