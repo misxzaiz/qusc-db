@@ -1,4 +1,4 @@
-use crate::database::{DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType, mysql::MySQLConnection, redis::RedisConnection};
+use crate::database::{DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType, mysql::MySQLConnection, redis::RedisConnection, postgresql::PostgreSQLConnection, mongodb::MongoDBConnection};
 use crate::ai::{AIService, AIConfig, AIProvider, deepseek::DeepSeekService};
 use crate::mcp::{MCP};
 use tauri::State;
@@ -40,6 +40,7 @@ pub async fn connect_database(
             "MySQL" => DatabaseType::MySQL,
             "Redis" => DatabaseType::Redis,
             "PostgreSQL" => DatabaseType::PostgreSQL,
+            "MongoDB" => DatabaseType::MongoDB,
             _ => return Err("Unsupported database type".to_string()),
         },
         host,
@@ -53,6 +54,8 @@ pub async fn connect_database(
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
         DatabaseType::MySQL => Box::new(MySQLConnection::new()),
         DatabaseType::Redis => Box::new(RedisConnection::new()),
+        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
+        DatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     
@@ -107,6 +110,7 @@ pub async fn test_database_connection(
             "MySQL" => DatabaseType::MySQL,
             "Redis" => DatabaseType::Redis,
             "PostgreSQL" => DatabaseType::PostgreSQL,
+            "MongoDB" => DatabaseType::MongoDB,
             _ => return Err("Unsupported database type".to_string()),
         },
         host,
@@ -119,6 +123,8 @@ pub async fn test_database_connection(
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
         DatabaseType::MySQL => Box::new(MySQLConnection::new()),
         DatabaseType::Redis => Box::new(RedisConnection::new()),
+        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
+        DatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     

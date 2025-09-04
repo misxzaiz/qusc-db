@@ -1,6 +1,5 @@
-use crate::database::{TableInfo, ColumnInfo};
+use crate::database::TableInfo;
 use crate::mcp::types::*;
-use std::collections::HashMap;
 use lru::LruCache;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -238,7 +237,7 @@ impl ContextBuilder {
     }
 
     /// 生成智能建议
-    fn generate_suggestions(&self, tables: &[String], business_context: &str) -> Vec<String> {
+    fn generate_suggestions(&self, _tables: &[String], business_context: &str) -> Vec<String> {
         let mut suggestions = Vec::new();
 
         match business_context {

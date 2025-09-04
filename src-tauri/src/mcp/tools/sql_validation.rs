@@ -90,7 +90,7 @@ impl SQLValidationTool {
     }
 
     /// 性能预估
-    fn estimate_performance(&self, sql: &str, context: &DatabaseContext) -> Option<u8> {
+    fn estimate_performance(&self, sql: &str, _context: &DatabaseContext) -> Option<u8> {
         let sql_upper = sql.to_uppercase();
         let mut score = 100u8;
 

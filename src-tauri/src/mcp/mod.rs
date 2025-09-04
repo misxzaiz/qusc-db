@@ -6,12 +6,10 @@ pub mod context;
 use crate::commands::AppState;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
 use serde_json::Value;
 use anyhow::Result;
 
 pub use server::MCPServer;
-pub use types::*;
 
 /// MCP服务器实例
 pub struct MCP {

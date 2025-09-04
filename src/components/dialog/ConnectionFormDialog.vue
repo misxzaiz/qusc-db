@@ -42,6 +42,7 @@
           <option value="MySQL">MySQL</option>
           <option value="Redis">Redis</option>
           <option value="PostgreSQL">PostgreSQL</option>
+          <option value="MongoDB">MongoDB</option>
         </select>
         <div v-if="errors['config.db_type']" class="field-error">{{ errors['config.db_type'] }}</div>
       </div>
@@ -99,16 +100,39 @@
         </div>
       </div>
       
-      <!-- 数据库名（MySQL/PostgreSQL） -->
+      <!-- 数据库名（MySQL/PostgreSQL/MongoDB） -->
       <div class="form-group" v-if="requiresDatabase(formData.config.db_type)">
-        <label>数据库名</label>
+        <label>{{ getDatabaseLabel(formData.config.db_type) }}</label>
         <input 
           v-model="formData.config.database" 
           type="text" 
           class="input"
-          placeholder="数据库名称（可选）"
+          :placeholder="getDatabasePlaceholder(formData.config.db_type)"
         />
-        <div class="form-hint">不指定数据库名将连接到默认数据库</div>
+        <div class="form-hint">{{ getDatabaseHint(formData.config.db_type) }}</div>
+      </div>
+      
+      <!-- MongoDB特有选项 -->
+      <div v-if="formData.config.db_type === 'MongoDB'" class="form-group">
+        <label>认证数据库</label>
+        <input 
+          v-model="formData.config.authSource" 
+          type="text" 
+          class="input"
+          placeholder="admin"
+        />
+        <div class="form-hint">用于身份验证的数据库，默认为 admin</div>
+      </div>
+      
+      <div v-if="formData.config.db_type === 'MongoDB'" class="form-group">
+        <label>副本集名称</label>
+        <input 
+          v-model="formData.config.replicaSet" 
+          type="text" 
+          class="input"
+          placeholder="副本集名称（可选）"
+        />
+        <div class="form-hint">如果连接到副本集，请指定副本集名称</div>
       </div>
       
       <!-- SSL选项 -->
@@ -179,7 +203,9 @@ const formData = computed(() => {
         password: props.connection.config?.password || '',
         database: props.connection.config?.database || '',
         ssl: props.connection.config?.ssl || false,
-        timeout: props.connection.config?.timeout || 30
+        timeout: props.connection.config?.timeout || 30,
+        authSource: props.connection.config?.authSource || '',
+        replicaSet: props.connection.config?.replicaSet || ''
       }
     }
   }
@@ -195,7 +221,9 @@ const formData = computed(() => {
       password: '',
       database: '',
       ssl: false,
-      timeout: 30
+      timeout: 30,
+      authSource: '',
+      replicaSet: ''
     }
   }
 })
@@ -228,7 +256,8 @@ const getDefaultPort = (dbType) => {
   const portMap = {
     'MySQL': '3306',
     'PostgreSQL': '5432',
-    'Redis': '6379'
+    'Redis': '6379',
+    'MongoDB': '27017'
   }
   return portMap[dbType] || ''
 }
@@ -237,21 +266,49 @@ const getDefaultPortForType = (dbType) => {
   const portMap = {
     'MySQL': 3306,
     'PostgreSQL': 5432,
-    'Redis': 6379
+    'Redis': 6379,
+    'MongoDB': 27017
   }
   return portMap[dbType] || null
 }
 
 const requiresAuth = (dbType) => {
-  return ['MySQL', 'PostgreSQL'].includes(dbType)
+  return ['MySQL', 'PostgreSQL', 'MongoDB'].includes(dbType)
 }
 
 const requiresDatabase = (dbType) => {
-  return ['MySQL', 'PostgreSQL'].includes(dbType)
+  return ['MySQL', 'PostgreSQL', 'MongoDB'].includes(dbType)
 }
 
 const supportsSsl = (dbType) => {
-  return ['MySQL', 'PostgreSQL'].includes(dbType)
+  return ['MySQL', 'PostgreSQL', 'MongoDB'].includes(dbType)
+}
+
+const getDatabaseLabel = (dbType) => {
+  const labelMap = {
+    'MySQL': '数据库名',
+    'PostgreSQL': '数据库名',
+    'MongoDB': '数据库名'
+  }
+  return labelMap[dbType] || '数据库名'
+}
+
+const getDatabasePlaceholder = (dbType) => {
+  const placeholderMap = {
+    'MySQL': '数据库名称（可选）',
+    'PostgreSQL': '数据库名称（可选）',
+    'MongoDB': '数据库名称（可选）'
+  }
+  return placeholderMap[dbType] || '数据库名称（可选）'
+}
+
+const getDatabaseHint = (dbType) => {
+  const hintMap = {
+    'MySQL': '不指定数据库名将连接到默认数据库',
+    'PostgreSQL': '不指定数据库名将连接到默认数据库',
+    'MongoDB': '不指定数据库名将需要在查询时选择数据库'
+  }
+  return hintMap[dbType] || '不指定数据库名将连接到默认数据库'
 }
 
 const handleDbTypeChange = (formData) => {

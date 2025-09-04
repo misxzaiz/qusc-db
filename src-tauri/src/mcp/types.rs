@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::database::{TableInfo, ColumnInfo};
+use crate::database::TableInfo;
 
 /// MCP工具的通用响应类型
 #[derive(Debug, Clone, Serialize, Deserialize)]
