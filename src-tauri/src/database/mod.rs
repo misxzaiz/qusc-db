@@ -66,3 +66,4 @@ pub struct ColumnInfo {
 
 pub mod mysql;
 pub mod redis;
+pub mod postgres;

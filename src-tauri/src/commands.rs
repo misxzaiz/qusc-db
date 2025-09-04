@@ -1,4 +1,4 @@
-use crate::database::{DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType, mysql::MySQLConnection, redis::RedisConnection};
+use crate::database::{DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType, mysql::MySQLConnection, redis::RedisConnection, postgres::PostgreSQLConnection};
 use crate::ai::{AIService, AIConfig, AIProvider, deepseek::DeepSeekService};
 use crate::mcp::{MCP};
 use tauri::State;
@@ -53,6 +53,7 @@ pub async fn connect_database(
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
         DatabaseType::MySQL => Box::new(MySQLConnection::new()),
         DatabaseType::Redis => Box::new(RedisConnection::new()),
+        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     
@@ -119,6 +120,7 @@ pub async fn test_database_connection(
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
         DatabaseType::MySQL => Box::new(MySQLConnection::new()),
         DatabaseType::Redis => Box::new(RedisConnection::new()),
+        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     
