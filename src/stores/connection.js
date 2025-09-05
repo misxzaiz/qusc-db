@@ -38,7 +38,7 @@ export const useConnectionStore = defineStore('connection', () => {
       port: 5432,
       username: 'postgres',
       password: '',
-      database: 'postgres'
+      database: 'postgres' // PostgreSQL 的默认数据库
     }
   })
 

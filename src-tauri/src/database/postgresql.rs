@@ -68,12 +68,16 @@ impl DatabaseConnection for PostgreSQLConnection {
         cfg.user = Some(config.username.as_ref().unwrap_or(&"postgres".to_string()).clone());
         cfg.password = config.password.clone();
         
-        // 正确处理数据库名称 - 确保有值才设置
-        if let Some(db_name) = &config.database {
-            if !db_name.is_empty() {
-                cfg.dbname = Some(db_name.clone());
+        // 正确处理数据库名称 - PostgreSQL 必须指定数据库
+        let db_name = match &config.database {
+            Some(name) if !name.is_empty() => name.clone(),
+            _ => {
+                // PostgreSQL 默认数据库名称
+                info!("未指定数据库名称，使用默认数据库: postgres");
+                "postgres".to_string()
             }
-        }
+        };
+        cfg.dbname = Some(db_name);
         
         // 设置连接池参数
         cfg.manager = Some(ManagerConfig {

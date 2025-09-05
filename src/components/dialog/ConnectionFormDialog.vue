@@ -79,7 +79,8 @@
       
       <!-- 认证信息 -->
       <div class="form-row" v-if="requiresAuth(formData.config.db_type)">
-        <div class="form-group">
+        <!-- 用户名 (Redis不需要用户名) -->
+        <div class="form-group" v-if="requiresUsername(formData.config.db_type)">
           <label>用户名</label>
           <input 
             v-model="formData.config.username" 
@@ -89,13 +90,14 @@
           />
         </div>
         
-        <div class="form-group">
-          <label>密码</label>
+        <!-- 密码字段 -->
+        <div class="form-group" :class="{ 'full-width': !requiresUsername(formData.config.db_type) }">
+          <label>{{ getPasswordLabel(formData.config.db_type) }}</label>
           <input 
             v-model="formData.config.password" 
             type="password" 
             class="input"
-            placeholder="数据库密码"
+            :placeholder="getPasswordPlaceholder(formData.config.db_type)"
           />
         </div>
       </div>
@@ -273,7 +275,25 @@ const getDefaultPortForType = (dbType) => {
 }
 
 const requiresAuth = (dbType) => {
+  return ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis'].includes(dbType)
+}
+
+const requiresUsername = (dbType) => {
   return ['MySQL', 'PostgreSQL', 'MongoDB'].includes(dbType)
+}
+
+const getPasswordLabel = (dbType) => {
+  return dbType === 'Redis' ? 'Redis密码' : '密码'
+}
+
+const getPasswordPlaceholder = (dbType) => {
+  const placeholderMap = {
+    'Redis': 'Redis服务器密码（可选）',
+    'MySQL': '数据库密码',
+    'PostgreSQL': '数据库密码',
+    'MongoDB': '数据库密码'
+  }
+  return placeholderMap[dbType] || '数据库密码'
 }
 
 const requiresDatabase = (dbType) => {
@@ -296,7 +316,7 @@ const getDatabaseLabel = (dbType) => {
 const getDatabasePlaceholder = (dbType) => {
   const placeholderMap = {
     'MySQL': '数据库名称（可选）',
-    'PostgreSQL': '数据库名称（可选）',
+    'PostgreSQL': 'postgres（PostgreSQL默认数据库）',
     'MongoDB': '数据库名称（可选）'
   }
   return placeholderMap[dbType] || '数据库名称（可选）'
@@ -305,7 +325,7 @@ const getDatabasePlaceholder = (dbType) => {
 const getDatabaseHint = (dbType) => {
   const hintMap = {
     'MySQL': '不指定数据库名将连接到默认数据库',
-    'PostgreSQL': '不指定数据库名将连接到默认数据库',
+    'PostgreSQL': 'PostgreSQL 需要指定数据库名，默认使用 "postgres"',
     'MongoDB': '不指定数据库名将需要在查询时选择数据库'
   }
   return hintMap[dbType] || '不指定数据库名将连接到默认数据库'

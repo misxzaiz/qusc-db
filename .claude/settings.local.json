@@ -70,7 +70,24 @@
       "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
       "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
       "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
-      "Bash(timeout 15s cargo tauri dev)"
+      "Bash(timeout 15s cargo tauri dev)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src\\database/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)"
     ],
     "deny": []
   }

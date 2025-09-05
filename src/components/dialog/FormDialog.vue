@@ -511,6 +511,10 @@ defineExpose({
   margin-bottom: 0;
 }
 
+:deep(.form-row .form-group.full-width) {
+  flex: 1 1 100%;
+}
+
 :deep(label) {
   display: block;
   font-size: 13px;
