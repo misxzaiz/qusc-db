@@ -56,9 +56,10 @@ impl DatabaseConnection for PostgreSQLConnection {
     async fn connect(&mut self, config: &ConnectionConfig) -> anyhow::Result<()> {
         use tracing::{info, error, debug};
         
-        info!("正在连接PostgreSQL数据库 - 主机: {}, 端口: {}, 用户: {}", 
+        info!("正在连接PostgreSQL数据库 - 主机: {}, 端口: {}, 用户: {}, 数据库: {}", 
               config.host, config.port, 
-              config.username.as_ref().unwrap_or(&"postgres".to_string()));
+              config.username.as_ref().unwrap_or(&"postgres".to_string()),
+              config.database.as_ref().unwrap_or(&"默认".to_string()));
 
         // 构建连接池配置
         let mut cfg = Config::new();
@@ -66,7 +67,13 @@ impl DatabaseConnection for PostgreSQLConnection {
         cfg.port = Some(config.port);
         cfg.user = Some(config.username.as_ref().unwrap_or(&"postgres".to_string()).clone());
         cfg.password = config.password.clone();
-        cfg.dbname = config.database.clone();
+        
+        // 正确处理数据库名称 - 确保有值才设置
+        if let Some(db_name) = &config.database {
+            if !db_name.is_empty() {
+                cfg.dbname = Some(db_name.clone());
+            }
+        }
         
         // 设置连接池参数
         cfg.manager = Some(ManagerConfig {
@@ -76,7 +83,10 @@ impl DatabaseConnection for PostgreSQLConnection {
         debug!("正在创建PostgreSQL连接池...");
         
         let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls)
-            .map_err(|e| anyhow::anyhow!("创建连接池失败: {}", e))?;
+            .map_err(|e| {
+                error!("PostgreSQL连接池创建失败: {}", e);
+                anyhow::anyhow!("创建连接池失败: {}. 请检查: 1) PostgreSQL服务是否启动 2) 连接参数是否正确 3) 数据库名称是否存在 4) 用户权限是否足够", e)
+            })?;
         
         // 测试连接
         let _client = pool.get().await

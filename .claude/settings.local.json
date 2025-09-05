@@ -59,7 +59,18 @@
       "Read(/D:\\qusc\\qusc-db\\src-tauri/**)",
       "Read(/D:\\qusc\\qusc-db\\src-tauri/**)",
       "Read(/D:\\qusc\\qusc-db\\src-tauri/**)",
-      "Read(/D:\\qusc\\qusc-db\\src-tauri/**)"
+      "Read(/D:\\qusc\\qusc-db\\src-tauri/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src\\database/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src\\database/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\stores/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\stores/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\stores/**)",
+      "Read(/D:\\qusc\\qusc-db\\src\\stores/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
+      "Read(/D:\\qusc\\qusc-db\\src-tauri\\src/**)",
+      "Bash(timeout 15s cargo tauri dev)"
     ],
     "deny": []
   }

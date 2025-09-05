@@ -18,24 +18,6 @@ impl MongoDBConnection {
         }
     }
     
-    // 将RawBsonRef值转换为字符串的辅助函数
-    fn raw_bson_to_string(value: mongodb::bson::RawBsonRef) -> String {
-        if let Some(s) = value.as_str() {
-            s.to_string()
-        } else if let Some(i) = value.as_i32() {
-            i.to_string()
-        } else if let Some(i) = value.as_i64() {
-            i.to_string()
-        } else if let Some(f) = value.as_f64() {
-            f.to_string()
-        } else if let Some(b) = value.as_bool() {
-            b.to_string()
-        } else if value.as_null().is_some() {
-            "null".to_string()
-        } else {
-            format!("{:?}", value)
-        }
-    }
     
     // 将BSON值转换为字符串的辅助函数
     fn bson_to_string(value: &Bson) -> String {
