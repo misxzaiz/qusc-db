@@ -393,6 +393,7 @@ export const useConnectionStore = defineStore('connection', () => {
     try {
       const encryptedConfig = await encryptConnectionConfig(config)
       const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}')
+      config.name = name
       saved[name] = encryptedConfig
       localStorage.setItem('qusc-db-connections', JSON.stringify(saved))
     } catch (error) {
