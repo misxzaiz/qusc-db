@@ -46,6 +46,18 @@
             <button @click="loadConnectionStructure(connection)" class="retry-btn-small">重试</button>
           </div>
           
+          <!-- 使用专用数据库组件 -->
+          <component
+            v-else-if="hasSpecialComponent(connection.config.db_type)"
+            :is="getDatabaseComponent(connection.config.db_type)"
+            :structure="connection.structure"
+            :connection-id="connection.connectionId"
+            :parent-connection="connection"
+            :selected-node="selectedNode"
+            @node-click="handleNodeClick"
+          />
+          
+          <!-- 回退到通用组件 -->
           <DatabaseTreeNode
             v-else
             v-for="child in connection.children"
@@ -74,11 +86,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
 import ConnectionHeader from './db/common/ConnectionHeader.vue'
 import DatabaseTreeNode from '@/components/common/DatabaseTreeNode.vue'
 import DatabaseService from '@/services/databaseService'
+
+// 动态组件映射
+const DB_COMPONENTS = {
+  'MySQL': () => import('./db/mysql/MySQLTreeNode.vue'),
+  'PostgreSQL': () => import('./db/mysql/MySQLTreeNode.vue'), // PostgreSQL 使用相同的逻辑
+  // 'Redis': () => import('./db/redis/RedisTreeNode.vue'),
+  // 'MongoDB': () => import('./db/mongodb/MongoTreeNode.vue')
+}
 
 // Store
 const connectionStore = useConnectionStore()
@@ -195,7 +215,10 @@ async function loadConnectionStructure(connection) {
     // 2. 使用连接ID获取数据库结构
     const structure = await DatabaseService.getDatabaseStructure(connectionId)
     
-    // 3. 转换为简单的树节点
+    // 保存完整的结构数据供专用组件使用
+    connection.structure = structure
+    
+    // 3. 转换为简单的树节点（将逐步迁移到专用组件）
     connection.children = buildSimpleChildren(structure, connection)
   } catch (err) {
     connection.error = err.message || '加载数据库结构失败'
@@ -273,6 +296,20 @@ function buildSimpleChildren(structure, parentConnection) {
   }
   
   return children
+}
+
+/**
+ * 获取数据库专用组件
+ */
+function getDatabaseComponent(dbType) {
+  return DB_COMPONENTS[dbType] || null
+}
+
+/**
+ * 检查是否有专用组件
+ */
+function hasSpecialComponent(dbType) {
+  return !!DB_COMPONENTS[dbType]
 }
 
 /**
