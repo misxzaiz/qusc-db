@@ -48,7 +48,7 @@
           
           <!-- 使用专用数据库组件 -->
           <component
-            v-else-if="hasSpecialComponent(connection.config.db_type)"
+            v-else-if="hasSpecialComponent(connection.config.db_type) && connection.structure"
             :is="getDatabaseComponent(connection.config.db_type)"
             :structure="connection.structure"
             :connection-id="connection.connectionId"
@@ -86,18 +86,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineAsyncComponent } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
 import ConnectionHeader from './db/common/ConnectionHeader.vue'
 import DatabaseTreeNode from '@/components/common/DatabaseTreeNode.vue'
 import DatabaseService from '@/services/databaseService'
 
-// 动态组件映射
+// 动态组件映射 - 使用 defineAsyncComponent
 const DB_COMPONENTS = {
-  'MySQL': () => import('./db/mysql/MySQLTreeNode.vue'),
-  'PostgreSQL': () => import('./db/mysql/MySQLTreeNode.vue'), // PostgreSQL 使用相同的逻辑
-  // 'Redis': () => import('./db/redis/RedisTreeNode.vue'),
-  // 'MongoDB': () => import('./db/mongodb/MongoTreeNode.vue')
+  'MySQL': defineAsyncComponent(() => import('./db/mysql/MySQLTreeNode.vue')),
+  'PostgreSQL': defineAsyncComponent(() => import('./db/mysql/MySQLTreeNode.vue')), // PostgreSQL 使用相同的逻辑
+  // 'Redis': defineAsyncComponent(() => import('./db/redis/RedisTreeNode.vue')),
+  // 'MongoDB': defineAsyncComponent(() => import('./db/mongodb/MongoTreeNode.vue'))
 }
 
 // Store

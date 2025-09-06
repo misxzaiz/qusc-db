@@ -40,7 +40,21 @@ const emit = defineEmits(['node-click', 'node-expand', 'node-context-menu'])
 
 // 构建 MySQL 特定的树节点
 const treeNodes = computed(() => {
-  return MySQLStructureBuilder.buildTreeNodes(props.structure, props.parentConnection)
+  // 验证必要的数据
+  if (!props.structure || !props.parentConnection) {
+    console.warn('MySQLTreeNode: 缺少必要的数据', {
+      structure: !!props.structure,
+      parentConnection: !!props.parentConnection
+    })
+    return []
+  }
+  
+  try {
+    return MySQLStructureBuilder.buildTreeNodes(props.structure, props.parentConnection)
+  } catch (error) {
+    console.error('MySQLTreeNode: 构建树节点失败', error)
+    return []
+  }
 })
 
 // 处理节点点击

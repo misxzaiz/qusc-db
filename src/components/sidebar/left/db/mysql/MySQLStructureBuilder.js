@@ -13,11 +13,28 @@ export class MySQLStructureBuilder {
   static buildTreeNodes(structure, parentConnection) {
     const children = []
     
-    if (!structure.databases) {
+    // 验证输入参数
+    if (!structure) {
+      console.warn('MySQLStructureBuilder: structure 为空')
+      return children
+    }
+    
+    if (!parentConnection) {
+      console.warn('MySQLStructureBuilder: parentConnection 为空')
+      return children
+    }
+    
+    if (!structure.databases || !Array.isArray(structure.databases)) {
+      console.warn('MySQLStructureBuilder: structure.databases 不是有效数组', structure)
       return children
     }
     
     structure.databases.forEach(db => {
+      if (!db || !db.name) {
+        console.warn('MySQLStructureBuilder: 无效的数据库对象', db)
+        return
+      }
+      
       const dbNode = {
         key: `${parentConnection.key}-${db.name}`,
         name: db.name,
