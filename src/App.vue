@@ -48,6 +48,17 @@
       @update:visible="showSettings = $event"
       @close="showSettings = false"
     />
+
+    <!-- UI主题管理器 -->
+    <UIThemeManager 
+      :current-db-type="currentConnection?.config?.db_type || 'MySQL'"
+      :connection-id="currentConnection?.id || ''"
+      :show-quick-switch="true"
+      :allow-customization="true"
+      @theme-change="handleThemeChange"
+      @db-theme-change="handleDbThemeChange"
+      @layout-change="handleLayoutChange"
+    />
   </div>
 </template>
 
@@ -56,6 +67,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useConnectionStore } from './stores/connection'
 import { useAIStore } from './stores/ai'
 import { useNotificationStore } from './stores/notification'
+import { useThemeStore } from './stores/theme'
 import { useTheme } from './composables/useTheme.js'
 import { useShortcuts, useAppShortcuts } from './composables/useShortcuts.js'
 import { useUserPreferences } from './composables/usePersistence.js'
@@ -68,11 +80,13 @@ import AISidebar from './components/sidebar/ai/index.vue'
 import NotificationToast from './components/notification/index.vue'
 import DialogSystem from './components/dialog/index.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
+import UIThemeManager from './components/database-renderers/UIThemeManager.vue'
 
 // 状态管理
 const connectionStore = useConnectionStore()
 const aiStore = useAIStore()
 const notificationStore = useNotificationStore()
+const themeStore = useThemeStore()
 
 // 用户体验功能
 const { toggleTheme, initTheme } = useTheme()
@@ -119,6 +133,10 @@ const handleConnectionSelect = async (connectionConfig) => {
       id: connectionId,
       config: connectionConfig
     }
+
+    // 更新主题系统的数据库上下文
+    themeStore.updateDatabaseContext(connectionId, connectionConfig.db_type)
+    
     showNotification('数据库连接成功')
   } catch (error) {
     showNotification(`连接失败: ${error}`, 'error')
@@ -191,9 +209,30 @@ const hideNotification = () => {
   notification.show = false
 }
 
+// 主题变化处理
+const handleThemeChange = (themeInfo) => {
+  themeStore.updateGlobalTheme(themeInfo.theme)
+  if (themeInfo.colors) {
+    themeStore.updateCustomColors(themeInfo.colors)
+  }
+  showNotification('主题已更新')
+}
+
+const handleDbThemeChange = (dbThemeInfo) => {
+  themeStore.updateDatabaseContext(currentConnection.value?.id, dbThemeInfo.dbType)
+  showNotification(`${dbThemeInfo.dbType} 主题已更新`)
+}
+
+const handleLayoutChange = (layoutInfo) => {
+  themeStore.updateLayoutConfig(layoutInfo)
+  showNotification('布局配置已更新')
+}
+
 // 主题切换处理
 const handleThemeToggle = () => {
-  toggleTheme()
+  themeStore.updateGlobalTheme(
+    themeStore.currentGlobalTheme === 'light' ? 'dark' : 'light'
+  )
   showNotification('主题已切换')
 }
 
@@ -232,6 +271,7 @@ onMounted(async () => {
   try {
     // 初始化主题系统
     initTheme()
+    themeStore.initTheme()
     
     // 初始化全局快捷键
     initShortcuts()
@@ -240,8 +280,7 @@ onMounted(async () => {
     registerCommonShortcuts({
       executeQuery: handleGlobalExecuteQuery,
       toggleTheme: () => {
-        toggleTheme()
-        showNotification('主题已切换')
+        handleThemeToggle()
       },
       toggleAI: () => {
         aiPanelOpen.value = !aiPanelOpen.value

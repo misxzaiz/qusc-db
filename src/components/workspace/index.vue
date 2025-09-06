@@ -53,7 +53,22 @@
       ></div>
 
       <!-- 查询结果区域 -->
+      <AdaptiveQueryViewer
+        v-if="currentConnection"
+        :query-result="currentTab.result"
+        :db-type="currentConnection.config.db_type"
+        :connection-id="currentConnection.id"
+        :allow-editing="false"
+        :show-statusbar="true"
+        @query-refresh="refreshCurrentQuery"
+        @query-retry="retryQuery"
+        @error-explain="explainError"
+        @data-export="exportResults"
+        @data-update="handleDataUpdate"
+        @operation-execute="handleOperationExecute"
+      />
       <QueryResults
+        v-else
         :result="currentTab.result"
         :error="currentTab.error"
         :page-size="pageSize"
@@ -80,6 +95,7 @@ import WorkspaceTabs from './WorkspaceTabs.vue'
 import ConnectionSelector from './ConnectionSelector.vue'
 import SqlEditor from './SqlEditor.vue'
 import QueryResults from './QueryResults.vue'
+import AdaptiveQueryViewer from '../database-renderers/AdaptiveQueryViewer.vue'
 
 // Composables导入
 import { useTabManager } from './composables/useTabManager'
@@ -549,6 +565,24 @@ const retryFailedQueries = async (failedQueries) => {
       console.error(`重试查询 ${index} 失败:`, error)
     }
   }
+}
+
+// 新增的自适应查看器事件处理
+const refreshCurrentQuery = () => {
+  const queryToExecute = getQueryToExecute(sqlEditorRef.value, currentTab.value.query)
+  if (queryToExecute) {
+    executeQuery()
+  }
+}
+
+const handleDataUpdate = (updateInfo) => {
+  console.log('数据更新:', updateInfo)
+  // 这里可以实现数据更新逻辑，比如重新查询
+}
+
+const handleOperationExecute = (operationInfo) => {
+  console.log('执行操作:', operationInfo)
+  // 这里可以实现数据库特定操作
 }
 
 // 事件处理
