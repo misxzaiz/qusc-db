@@ -9,6 +9,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 // 导入Tauri API - 使用Tauri 2.0的正确路径
 import { invoke } from '@tauri-apps/api/core'
 
+// 初始化右键菜单系统
+import '@/services/contextMenu'
+
 const app = createApp(App)
 const pinia = createPinia()
 

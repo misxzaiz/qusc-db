@@ -75,6 +75,16 @@
       @update:visible="showConnectionDialog = $event"
     />
   </div>
+  
+  <!-- 右键菜单 -->
+  <ContextMenu
+    :visible="showMenu"
+    :items="menuItems"
+    :position="menuPosition"
+    :context="currentContext"
+    @close="closeMenu"
+    @item-click="handleMenuItemClick"
+  />
 </template>
 
 <script setup>
@@ -82,10 +92,24 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
 import ConnectionNode from './db/common/ConnectionNode.vue'
 import ConnectionDialog from '@/components/dialog/ConnectionFormDialog.vue'
+import ContextMenu from '@/components/common/ContextMenu.vue'
 import { useConnectionManager } from './composables/useConnectionManager'
+import { useContextMenu } from '@/composables/useContextMenu'
 
 // Store
 const connectionStore = useConnectionStore()
+
+// 右键菜单功能
+const {
+  showMenu,
+  menuItems,
+  menuPosition,
+  currentContext,
+  handleContextMenu: showContextMenu,
+  closeMenu,
+  handleMenuItemClick,
+  createMenuContext
+} = useContextMenu()
 
 // 连接管理功能
 const {
@@ -213,11 +237,44 @@ function handleNodeExpand(nodeData) {
 function handleContextMenu(contextData) {
   console.log('Context menu:', contextData)
   
-  // 实现连接管理菜单
-  if (contextData.type === 'connection') {
-    // 可以实现连接特定的右键菜单
-    showConnectionContextMenu(contextData)
+  // 确定数据库类型
+  let dbType = 'MySQL' // 默认值
+  let nodeType = contextData.type
+  
+  // 根据上下文数据确定数据库类型
+  if (contextData.type === 'database' && contextData.database?.dbType) {
+    dbType = contextData.database.dbType
+  } else if (contextData.type === 'connection' && contextData.connection?.config?.db_type) {
+    dbType = contextData.connection.config.db_type
+  } else if (contextData.type === 'redis-key' || contextData.key) {
+    // Redis key类型处理
+    dbType = 'Redis'
+    nodeType = 'key'
+  } else if (contextData.connectionId) {
+    // 通过连接ID查找数据库类型
+    const connection = connections.value.find(conn => 
+      conn.realConnectionId === contextData.connectionId || 
+      conn.id === contextData.connectionId ||
+      conn.key === contextData.connectionId
+    )
+    if (connection?.config?.db_type) {
+      dbType = connection.config.db_type
+    }
   }
+  
+  // 创建菜单上下文
+  const menuContext = createMenuContext({
+    nodeType: nodeType,
+    dbType: dbType,
+    connectionId: contextData.connectionId || '',
+    databaseName: contextData.database?.name || contextData.database,
+    nodeName: contextData.table?.name || contextData.key || contextData.database?.name || contextData.nodeName,
+    nodeData: contextData.table || contextData.nodeData || contextData,
+    event: contextData.event
+  })
+  
+  // 显示右键菜单
+  showContextMenu(contextData.event, menuContext)
 }
 
 /**
