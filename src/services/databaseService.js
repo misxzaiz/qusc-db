@@ -3,6 +3,40 @@ import { invoke } from '@tauri-apps/api/core'
 // TypeScript interfaces converted to JSDoc comments for better documentation
 
 /**
+ * @typedef {Object} DatabaseListResponse
+ * @property {string} connection_id
+ * @property {'MySQL'|'PostgreSQL'|'Redis'|'MongoDB'|'SQLite'} db_type
+ * @property {DatabaseBasicInfo[]} databases
+ */
+
+/**
+ * @typedef {Object} DatabaseBasicInfo
+ * @property {string} name
+ * @property {SizeInfo} [size_info]
+ * @property {number} [table_count]
+ * @property {number} [view_count]
+ * @property {number} [procedure_count]
+ * @property {number} [function_count]
+ * @property {boolean} has_tables
+ * @property {boolean} has_views
+ * @property {boolean} has_procedures
+ * @property {boolean} has_functions
+ */
+
+/**
+ * @typedef {Object} DatabaseTablesResponse
+ * @property {string} connection_id
+ * @property {string} database_name
+ * @property {'MySQL'|'PostgreSQL'|'Redis'|'MongoDB'|'SQLite'} db_type
+ * @property {TableNode[]} tables
+ * @property {ViewNode[]} views
+ * @property {ProcedureNode[]} procedures
+ * @property {FunctionNode[]} functions
+ * @property {RedisKeyInfo} [redis_keys]
+ * @property {MongoCollectionInfo} [mongodb_collections]
+ */
+
+/**
  * @typedef {Object} DatabaseStructure
  * @property {string} connection_id
  * @property {'MySQL'|'PostgreSQL'|'Redis'|'MongoDB'|'SQLite'} db_type
@@ -119,8 +153,61 @@ import { invoke } from '@tauri-apps/api/core'
 
 export class DatabaseService {
   
+  // ===== 新的分离式API方法 =====
+  
   /**
-   * 获取完整的数据库结构用于导航树
+   * 获取数据库列表（轻量级，第一层API）
+   * @param {string} connectionId - 数据库连接ID
+   * @returns {Promise<DatabaseListResponse>} 数据库基础信息列表
+   */
+  static async getDatabases(connectionId) {
+    try {
+      return await invoke('get_databases_2', { connectionId })
+    } catch (error) {
+      console.error('Failed to get databases:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * 获取指定数据库的表列表（第二层API）
+   * @param {string} connectionId - 数据库连接ID
+   * @param {string} databaseName - 数据库名称
+   * @returns {Promise<DatabaseTablesResponse>} 数据库表信息
+   */
+  static async getDatabaseTables(connectionId, databaseName) {
+    try {
+      return await invoke('get_database_tables', { 
+        connectionId, 
+        databaseName 
+      })
+    } catch (error) {
+      console.error('Failed to get database tables:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * 预加载表信息（智能触发机制）
+   * @param {Object} request - 预加载请求参数
+   * @param {string} request.connection_id - 连接ID
+   * @param {'AiMention'|'SqlReference'|'UserHistory'|'UserClick'} request.trigger_source - 触发源
+   * @param {Array<{database: string, table: string}>} request.tables - 要预加载的表列表
+   * @returns {Promise<string[]>} 成功预加载的表名列表
+   */
+  static async preloadTableInfo(request) {
+    try {
+      return await invoke('preload_table_info', { request })
+    } catch (error) {
+      console.error('Failed to preload table info:', error)
+      throw error
+    }
+  }
+  
+  // ===== 保持向后兼容的API方法 =====
+  
+  /**
+   * 获取完整的数据库结构用于导航树（向后兼容）
    * @param {string} connectionId - 数据库连接ID
    * @returns {Promise<DatabaseStructure>} 数据库结构信息
    */

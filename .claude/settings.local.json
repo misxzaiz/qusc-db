@@ -92,7 +92,8 @@
       "Bash(powershell:*)",
       "Bash(cargo test:*)",
       "Bash(timeout:*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Read(//d/**)"
     ],
     "deny": []
   }

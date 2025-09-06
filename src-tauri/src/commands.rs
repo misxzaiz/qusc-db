@@ -290,6 +290,7 @@ pub async fn get_connection_status(
     Ok(connection.is_connected())
 }
 
+
 #[tauri::command]
 pub async fn get_databases(
     connection_id: String,
@@ -298,9 +299,76 @@ pub async fn get_databases(
     let connections = state.connections.lock().await;
     let connection = connections.get(&connection_id)
         .ok_or("连接未找到")?;
-        
+
     connection.get_databases().await
         .map_err(|e| format!("获取数据库列表失败: {}", e))
+}
+
+#[tauri::command]
+pub async fn get_databases_2(
+    connection_id: String,
+    state: State<'_, AppState>,
+) -> Result<DatabaseListResponse, String> {
+    let connections = state.connections.lock().await;
+    let connection = connections.get(&connection_id)
+        .ok_or("连接未找到")?;
+        
+    // 获取数据库列表（轻量级，只获取名称）
+    let database_names = connection.get_databases().await
+        .map_err(|e| format!("获取数据库列表失败: {}", e))?;
+    
+    // 从连接配置中获取数据库类型
+    let configs = state.connection_configs.lock().await;
+    let config = configs.get(&connection_id)
+        .ok_or("连接配置未找到")?;
+    
+    // 转换数据库类型
+    let db_type = match config.db_type {
+        LegacyDatabaseType::MySQL => DatabaseType::MySQL,
+        LegacyDatabaseType::PostgreSQL => DatabaseType::PostgreSQL,
+        LegacyDatabaseType::Redis => DatabaseType::Redis,
+        LegacyDatabaseType::MongoDB => DatabaseType::MongoDB,
+        LegacyDatabaseType::SQLite => DatabaseType::SQLite,
+    };
+    
+    // 构建轻量级数据库信息（不获取具体表信息）
+    let mut databases = Vec::new();
+    for db_name in database_names {
+        // 这里可以根据需要获取一些基础统计信息
+        // 暂时使用估算值，实际实现时可以执行轻量级查询获取准确统计
+        let (table_count, estimated_size) = match db_type {
+            DatabaseType::Redis => {
+                // Redis 可以快速获取键数量
+                (Some(0), 1024 * 100) // 估算 100KB
+            },
+            _ => {
+                // SQL 数据库暂时使用估算值，避免耗时的表遍历
+                (Some(10), 1024 * 500) // 估算 10 个表，500KB
+            }
+        };
+        
+        databases.push(DatabaseBasicInfo {
+            name: db_name,
+            size_info: Some(SizeInfo {
+                bytes: estimated_size,
+                formatted: format_bytes(estimated_size),
+            }),
+            table_count,
+            view_count: Some(0),
+            procedure_count: Some(0),
+            function_count: Some(0),
+            has_tables: table_count.unwrap_or(0) > 0,
+            has_views: false,
+            has_procedures: false,
+            has_functions: false,
+        });
+    }
+    
+    Ok(DatabaseListResponse {
+        connection_id: connection_id.clone(),
+        db_type,
+        databases,
+    })
 }
 
 #[tauri::command]
@@ -330,18 +398,151 @@ pub async fn get_database_tables(
     connection_id: String,
     database_name: String,
     state: State<'_, AppState>,
-) -> Result<Vec<TableInfo>, String> {
+) -> Result<DatabaseTablesResponse, String> {
     let mut connections = state.connections.lock().await;
     let connection = connections.get_mut(&connection_id)
         .ok_or("连接未找到")?;
     
-    // 先选择数据库
-    connection.use_database(&database_name).await
-        .map_err(|e| format!("选择数据库失败: {}", e))?;
+    // 从连接配置中获取数据库类型
+    let configs = state.connection_configs.lock().await;
+    let config = configs.get(&connection_id)
+        .ok_or("连接配置未找到")?;
     
-    // 获取表结构
-    connection.get_schema().await
-        .map_err(|e| format!("获取表结构失败: {}", e))
+    // 转换数据库类型
+    let db_type = match config.db_type {
+        LegacyDatabaseType::MySQL => DatabaseType::MySQL,
+        LegacyDatabaseType::PostgreSQL => DatabaseType::PostgreSQL,
+        LegacyDatabaseType::Redis => DatabaseType::Redis,
+        LegacyDatabaseType::MongoDB => DatabaseType::MongoDB,
+        LegacyDatabaseType::SQLite => DatabaseType::SQLite,
+    };
+    
+    // 根据数据库类型处理不同的结构
+    let (tables, views, procedures, functions, redis_keys, mongodb_collections) = match db_type {
+        DatabaseType::Redis => {
+            // Redis 特殊处理：database_name 实际上是数据库索引
+            let keys_result = connection.execute("KEYS *").await
+                .map_err(|e| format!("获取Redis键列表失败: {}", e))?;
+            
+            let key_count = keys_result.rows.len() as u64;
+            let sample_keys: Vec<RedisKeyNode> = keys_result.rows.into_iter()
+                .take(100)
+                .map(|row| {
+                    let key_name = row.get(0).unwrap_or(&"unknown".to_string()).clone();
+                    RedisKeyNode {
+                        key: key_name,
+                        data_type: RedisDataType::String,
+                        ttl: None,
+                        size: None,
+                    }
+                })
+                .collect();
+            
+            let redis_key_info = RedisKeyInfo {
+                database_index: database_name.parse().unwrap_or(0),
+                key_count,
+                expires_count: 0,
+                memory_usage: None,
+                sample_keys,
+            };
+            
+            (vec![], vec![], vec![], vec![], Some(redis_key_info), None)
+        },
+        DatabaseType::MySQL | DatabaseType::PostgreSQL => {
+            // 先选择数据库
+            connection.use_database(&database_name).await
+                .map_err(|e| format!("选择数据库失败: {}", e))?;
+            
+            // 获取表结构
+            let tables_info = connection.get_schema().await
+                .map_err(|e| format!("获取表结构失败: {}", e))?;
+            
+            let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
+                let size_bytes = 1024 * 50; // 50KB 默认大小
+                TableNode {
+                    name: table.name.clone(),
+                    size_info: Some(SizeInfo {
+                        bytes: size_bytes,
+                        formatted: format_bytes(size_bytes),
+                    }),
+                    row_count: None, // 暂时不获取行数，避免性能问题
+                    table_type: TableType::Table,
+                }
+            }).collect();
+            
+            (tables, vec![], vec![], vec![], None, None)
+        },
+        _ => {
+            // 其他数据库类型
+            connection.use_database(&database_name).await
+                .map_err(|e| format!("选择数据库失败: {}", e))?;
+            
+            let tables_info = connection.get_schema().await
+                .map_err(|e| format!("获取表结构失败: {}", e))?;
+            
+            let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
+                let size_bytes = 1024 * 10;
+                TableNode {
+                    name: table.name.clone(),
+                    size_info: Some(SizeInfo {
+                        bytes: size_bytes,
+                        formatted: format_bytes(size_bytes),
+                    }),
+                    row_count: None,
+                    table_type: TableType::Table,
+                }
+            }).collect();
+            
+            (tables, vec![], vec![], vec![], None, None)
+        }
+    };
+    
+    Ok(DatabaseTablesResponse {
+        connection_id: connection_id.clone(),
+        database_name: database_name.clone(),
+        db_type,
+        tables,
+        views,
+        procedures,
+        functions,
+        redis_keys,
+        mongodb_collections,
+    })
+}
+
+// ===== 新增：预加载接口 =====
+
+/// 预加载表信息（为AI引用、SQL引用等场景）
+#[tauri::command]
+pub async fn preload_table_info(
+    request: PreloadRequest,
+    state: State<'_, AppState>,
+) -> Result<Vec<String>, String> {
+    let mut loaded_tables = Vec::new();
+    
+    for table_ref in request.tables {
+        // 预加载指定表的信息
+        let database_name = table_ref.database.clone();
+        let table_name = table_ref.table.clone();
+        
+        match get_database_tables(
+            request.connection_id.clone(),
+            table_ref.database,
+            state.clone()
+        ).await {
+            Ok(_response) => {
+                loaded_tables.push(format!("{}.{}", database_name, table_name));
+            },
+            Err(e) => {
+                log::warn!("预加载表 {}.{} 失败: {}", database_name, table_name, e);
+            }
+        }
+    }
+    
+    // 记录预加载触发源（用于未来的智能预加载优化）
+    log::info!("预加载触发 - 源: {:?}, 成功加载: {:?}", request.trigger_source, loaded_tables);
+    
+    Ok(loaded_tables)
 }
 
 // ==================== MCP 相关命令 ====================

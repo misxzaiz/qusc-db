@@ -212,14 +212,40 @@ async function loadConnectionStructure(connection) {
     // 更新连接状态
     connection.status = 'connected'
     
-    // 2. 使用连接ID获取数据库结构
-    const structure = await DatabaseService.getDatabaseStructure(connectionId)
+    // 2. 使用新的分离式API获取数据库列表（轻量级）
+    const databaseListResponse = await DatabaseService.getDatabases(connectionId)
     
-    // 保存完整的结构数据供专用组件使用
-    connection.structure = structure
+    // 保存轻量级结构数据供专用组件使用
+    connection.structure = {
+      connection_id: connectionId,
+      db_type: databaseListResponse.db_type,
+      databases: databaseListResponse.databases.map(db => ({
+        name: db.name,
+        size_info: db.size_info,
+        tables: [], // 暂时为空，按需加载
+        views: [],
+        procedures: [],
+        functions: [],
+        redis_keys: null,
+        mongodb_collections: null,
+        // 添加统计信息
+        table_count: db.table_count,
+        has_tables: db.has_tables,
+        has_views: db.has_views,
+        has_procedures: db.has_procedures,
+        has_functions: db.has_functions
+      })),
+      connection_info: {
+        host: connection.config.host,
+        port: connection.config.port,
+        username: connection.config.username,
+        database_name: connection.config.database,
+        server_version: null
+      }
+    }
     
-    // 3. 转换为简单的树节点（将逐步迁移到专用组件）
-    connection.children = buildSimpleChildren(structure, connection)
+    // 3. 构建简化的子节点（保持向后兼容）
+    connection.children = buildLightweightChildren(databaseListResponse, connection)
   } catch (err) {
     connection.error = err.message || '加载数据库结构失败'
     connection.status = 'error'
@@ -230,70 +256,31 @@ async function loadConnectionStructure(connection) {
 }
 
 /**
- * 构建简化的子节点
+ * 构建轻量级子节点（基于新的分离式API）
  */
-function buildSimpleChildren(structure, parentConnection) {
+function buildLightweightChildren(databaseListResponse, parentConnection) {
   const children = []
   
-  if (structure.databases) {
-    // MySQL/PostgreSQL: 按数据库分组
-    structure.databases.forEach(db => {
-      const dbChildren = []
-      
-      // 添加表
-      if (db.tables && db.tables.length > 0) {
-        db.tables.forEach(table => {
-          dbChildren.push({
-            key: `${parentConnection.key}-${db.name}-table-${table.name}`,
-            name: table.name,
-            type: 'table',
-            info: `${DatabaseService.formatCount(table.row_count)} 行`
-          })
-        })
+  databaseListResponse.databases.forEach(db => {
+    const dbNode = {
+      key: `${parentConnection.key}-${db.name}`,
+      name: db.name,
+      type: 'database',
+      info: `${db.table_count || 0} 表`,
+      children: [], // 暂时为空，当用户点击数据库时按需加载
+      expanded: false,
+      // 添加数据库的统计信息
+      meta: {
+        table_count: db.table_count,
+        has_tables: db.has_tables,
+        has_views: db.has_views,
+        has_procedures: db.has_procedures,
+        has_functions: db.has_functions,
+        size_info: db.size_info
       }
-      
-      // 添加视图
-      if (db.views && db.views.length > 0) {
-        db.views.forEach(view => {
-          dbChildren.push({
-            key: `${parentConnection.key}-${db.name}-view-${view.name}`,
-            name: view.name,
-            type: 'view',
-            info: '视图'
-          })
-        })
-      }
-      
-      children.push({
-        key: `${parentConnection.key}-${db.name}`,
-        name: db.name,
-        type: 'database',
-        info: `${db.tables?.length || 0} 表`,
-        children: dbChildren,
-        expanded: false
-      })
-    })
-  } else if (structure.redis_keys) {
-    // Redis: 显示键样例
-    structure.redis_keys.sample_keys.forEach(keyInfo => {
-      children.push({
-        key: `${parentConnection.key}-key-${keyInfo.key}`,
-        name: keyInfo.key,
-        type: 'redis-key',
-        info: keyInfo.data_type
-      })
-    })
-  } else if (structure.mongodb_collections) {
-    // MongoDB: 显示集合
-    structure.mongodb_collections.collections.forEach(collection => {
-      children.push({
-        key: `${parentConnection.key}-collection-${collection.name}`,
-        name: collection.name,
-        type: 'collection',
-        info: `${DatabaseService.formatCount(collection.document_count)} 文档`
-      })
-    })
-  }
+    }
+    children.push(dbNode)
+  })
   
   return children
 }

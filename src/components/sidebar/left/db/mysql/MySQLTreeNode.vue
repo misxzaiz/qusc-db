@@ -6,6 +6,7 @@
       :node="node"
       :selected="selectedNode?.key === node.key"
       @node-click="handleNodeClick"
+      @node-expand="handleNodeExpand"
     />
   </div>
 </template>
@@ -14,6 +15,7 @@
 import { computed, ref } from 'vue'
 import DatabaseTreeNode from '@/components/common/DatabaseTreeNode.vue'
 import { MySQLStructureBuilder } from './MySQLStructureBuilder.js'
+import DatabaseService from '@/services/databaseService'
 
 // Props
 const props = defineProps({
@@ -38,6 +40,10 @@ const props = defineProps({
 // Events
 const emit = defineEmits(['node-click', 'node-expand', 'node-context-menu'])
 
+// 缓存已加载的数据库表信息
+const loadedDatabases = ref(new Set())
+const databaseTablesCache = ref({})
+
 // 构建 MySQL 特定的树节点
 const treeNodes = computed(() => {
   // 验证必要的数据
@@ -50,7 +56,23 @@ const treeNodes = computed(() => {
   }
   
   try {
-    return MySQLStructureBuilder.buildTreeNodes(props.structure, props.parentConnection)
+    // 使用轻量级结构构建基础数据库节点
+    const nodes = props.structure.databases.map(db => ({
+      key: `${props.parentConnection.key}-${db.name}`,
+      name: db.name,
+      type: 'database',
+      info: `${db.table_count || 0} 表`,
+      children: databaseTablesCache.value[db.name] || [], // 使用缓存的表信息
+      expanded: false,
+      meta: {
+        table_count: db.table_count,
+        has_tables: db.has_tables,
+        size_info: db.size_info,
+        database_name: db.name
+      }
+    }))
+    
+    return nodes
   } catch (error) {
     console.error('MySQLTreeNode: 构建树节点失败', error)
     return []
@@ -60,6 +82,41 @@ const treeNodes = computed(() => {
 // 处理节点点击
 function handleNodeClick(node) {
   emit('node-click', node)
+}
+
+// 处理节点展开（按需加载表信息）
+async function handleNodeExpand(node) {
+  if (node.type === 'database' && !loadedDatabases.value.has(node.meta.database_name)) {
+    try {
+      // 调用新的分离式API获取表信息
+      const tablesResponse = await DatabaseService.getDatabaseTables(
+        props.connectionId, 
+        node.meta.database_name
+      )
+      
+      // 使用 MySQLStructureBuilder 构建表树结构
+      const tableNodes = MySQLStructureBuilder.buildDatabaseChildren(
+        {
+          name: node.meta.database_name,
+          tables: tablesResponse.tables,
+          views: tablesResponse.views,
+          procedures: tablesResponse.procedures,
+          functions: tablesResponse.functions
+        },
+        props.parentConnection
+      )
+      
+      // 缓存表信息
+      databaseTablesCache.value[node.meta.database_name] = tableNodes
+      loadedDatabases.value.add(node.meta.database_name)
+      
+      console.log(`成功加载数据库 ${node.meta.database_name} 的表信息`)
+    } catch (error) {
+      console.error(`加载数据库 ${node.meta.database_name} 的表信息失败:`, error)
+    }
+  }
+  
+  emit('node-expand', node)
 }
 </script>
 

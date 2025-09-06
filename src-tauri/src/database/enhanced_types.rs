@@ -623,3 +623,66 @@ pub struct ConnectionConfig {
     #[serde(default)]
     pub options: HashMap<String, String>,
 }
+
+// ===== 分离式API结构 =====
+
+/// 轻量级数据库列表响应（第一层API）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseListResponse {
+    pub connection_id: String,
+    pub db_type: DatabaseType,
+    pub databases: Vec<DatabaseBasicInfo>,
+}
+
+/// 数据库基础信息（只包含统计信息，不包含具体表列表）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseBasicInfo {
+    pub name: String,
+    pub size_info: Option<SizeInfo>,
+    pub table_count: Option<u64>,
+    pub view_count: Option<u64>,
+    pub procedure_count: Option<u64>,
+    pub function_count: Option<u64>,
+    pub has_tables: bool,
+    pub has_views: bool,
+    pub has_procedures: bool,
+    pub has_functions: bool,
+}
+
+/// 数据库表列表响应（第二层API）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseTablesResponse {
+    pub connection_id: String,
+    pub database_name: String,
+    pub db_type: DatabaseType,
+    pub tables: Vec<TableNode>,
+    pub views: Vec<ViewNode>,
+    pub procedures: Vec<ProcedureNode>,
+    pub functions: Vec<FunctionNode>,
+    pub redis_keys: Option<RedisKeyInfo>,
+    pub mongodb_collections: Option<MongoCollectionInfo>,
+}
+
+/// 预加载请求参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PreloadRequest {
+    pub connection_id: String,
+    pub trigger_source: PreloadTriggerSource,
+    pub tables: Vec<TableReference>,
+}
+
+/// 预加载触发源
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PreloadTriggerSource {
+    AiMention,
+    SqlReference,
+    UserHistory,
+    UserClick,
+}
+
+/// 表引用信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableReference {
+    pub database: String,
+    pub table: String,
+}
