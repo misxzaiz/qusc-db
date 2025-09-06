@@ -33,16 +33,6 @@ const panels = [
     icon: ''
   },
   {
-    id: 'connections',
-    name: '连接',
-    icon: '🔌'
-  },
-  {
-    id: 'database',
-    name: '数据库',
-    icon: '🌳'
-  },
-  {
     id: 'history',
     name: '历史',
     icon: '📝'

@@ -6,18 +6,6 @@
         @connection-select="$emit('connection-select', $event)"
     />
 
-    <!-- 连接管理面板 -->
-    <ConnectionPanel 
-      v-show="activePanel === 'connections'" 
-      @connection-select="$emit('connection-select', $event)"
-    />
-
-    <!-- 数据库结构面板 -->
-    <DatabaseTreePanel
-      v-show="activePanel === 'database'"
-      @table-selected="$emit('table-selected', $event)"
-    />
-
     <!-- 查询历史面板 -->
     <HistoryPanel 
       v-show="activePanel === 'history'"
