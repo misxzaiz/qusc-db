@@ -38,7 +38,7 @@
           :functions="functions"
           :redis-keys="redisKeys"
           :mongodb-collections="mongoCollections"
-          :database="database"
+          :database="databaseWithTables"
           :connection-id="connectionId"
           :db-type="dbType"
           :selected-node="selectedNode"
@@ -104,6 +104,17 @@ const isSelected = computed(() => {
   return props.selectedNode && 
          props.selectedNode.type === 'database' && 
          props.selectedNode.name === props.database.name
+})
+
+// 创建包含加载数据的数据库对象，供子组件使用
+const databaseWithTables = computed(() => {
+  return {
+    ...props.database,
+    tables: tables.value,
+    views: views.value,
+    procedures: procedures.value,
+    functions: functions.value
+  }
 })
 
 function getTableComponent() {

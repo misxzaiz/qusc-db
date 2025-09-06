@@ -1,6 +1,6 @@
 <template>
   <div class="mongo-collections-container">
-    <div v-if="mongodbCollections && mongodbCollections.collections.length > 0" class="collections-info">
+    <div v-if="adaptedCollections && adaptedCollections.collections.length > 0" class="collections-info">
       <!-- 集合列表 -->
       <div class="collections-section">
         <div class="section-header">
@@ -8,7 +8,7 @@
           <span>集合</span>
         </div>
         <div
-          v-for="collection in mongodbCollections.collections"
+          v-for="collection in adaptedCollections.collections"
           :key="collection.name"
           class="mongo-collection-item"
           :class="{ 'selected': isCollectionSelected(collection) }"
@@ -22,9 +22,6 @@
           <div class="collection-meta">
             <span v-if="collection.document_count" class="doc-count">
               {{ formatCount(collection.document_count) }} 文档
-            </span>
-            <span v-if="collection.size" class="collection-size">
-              {{ formatBytes(collection.size) }}
             </span>
           </div>
           
@@ -48,13 +45,13 @@
       </div>
       
       <!-- GridFS文件桶 -->
-      <div v-if="mongodbCollections.gridfs_buckets && mongodbCollections.gridfs_buckets.length > 0" class="gridfs-section">
+      <div v-if="adaptedCollections.gridfs_buckets && adaptedCollections.gridfs_buckets.length > 0" class="gridfs-section">
         <div class="section-header">
           <i class="fas fa-archive"></i>
           <span>GridFS 文件桶</span>
         </div>
         <div
-          v-for="bucket in mongodbCollections.gridfs_buckets"
+          v-for="bucket in adaptedCollections.gridfs_buckets"
           :key="bucket.name"
           class="gridfs-bucket-item"
           :class="{ 'selected': isBucketSelected(bucket) }"
@@ -86,6 +83,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   mongodbCollections: {
     type: Object,
@@ -110,6 +109,41 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['node-click', 'node-context-menu'])
+
+// 数据适配逻辑：优先使用mongodbCollections，否则从database.tables中提取MongoDB集合
+const adaptedCollections = computed(() => {
+  console.log('MongoDB适配逻辑调试:')
+  console.log('- mongodbCollections:', props.mongodbCollections)
+  console.log('- database:', props.database)
+  console.log('- database.tables:', props.database?.tables)
+  
+  // 如果有专门的MongoDB集合数据就直接使用
+  if (props.mongodbCollections && props.mongodbCollections.collections) {
+    console.log('使用mongodbCollections数据')
+    return props.mongodbCollections
+  }
+  
+  // 否则从database.tables中适配MongoDB集合数据
+  if (props.database && props.database.tables && props.database.tables.length > 0) {
+    console.log('使用database.tables数据，表数量:', props.database.tables.length)
+    const collections = props.database.tables.map(table => ({
+      name: table.name,
+      document_count: table.row_count,
+      size: table.size_info ? table.size_info.bytes : null,
+      indexes: [] // 暂时为空，后续可以从其他接口获取
+    }))
+    
+    const result = {
+      collections: collections,
+      gridfs_buckets: [] // 暂时为空
+    }
+    console.log('适配后的集合数据:', result)
+    return result
+  }
+  
+  console.log('没有找到可用的MongoDB数据')
+  return null
+})
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes}B`
