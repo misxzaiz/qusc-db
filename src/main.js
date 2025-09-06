@@ -3,6 +3,9 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import './styles/main.scss'
 
+// 导入FontAwesome CSS
+import '@fortawesome/fontawesome-free/css/all.min.css'
+
 // 导入Tauri API - 使用Tauri 2.0的正确路径
 import { invoke } from '@tauri-apps/api/core'
 
