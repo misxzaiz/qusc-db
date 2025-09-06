@@ -1,6 +1,12 @@
 <template>
   <aside class="sidebar" :class="{ expanded }">
     <!-- 连接管理面板 -->
+    <DbPanel
+        v-show="activePanel === 'db'"
+        @connection-select="$emit('connection-select', $event)"
+    />
+
+    <!-- 连接管理面板 -->
     <ConnectionPanel 
       v-show="activePanel === 'connections'" 
       @connection-select="$emit('connection-select', $event)"
@@ -23,6 +29,7 @@
 import ConnectionPanel from './ConnectionPanel.vue'
 import DatabaseTreePanel from './DatabaseTreePanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
+import DbPanel from "@/components/sidebar/left/DbPanel.vue";
 
 // Props
 const props = defineProps({

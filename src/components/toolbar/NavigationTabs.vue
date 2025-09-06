@@ -28,6 +28,11 @@ const emit = defineEmits(['panel-select'])
 // 左侧面板配置
 const panels = [
   {
+    id: 'db',
+    name: 'DB',
+    icon: ''
+  },
+  {
     id: 'connections',
     name: '连接',
     icon: '🔌'
