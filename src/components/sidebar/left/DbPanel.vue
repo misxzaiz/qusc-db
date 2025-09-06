@@ -25,48 +25,15 @@
         <small>请先建立数据库连接</small>
       </div>
 
-      <!-- 数据库连接列表 -->
+      <!-- 使用新的分层架构 -->
       <div v-for="connection in connections" :key="connection.key" class="connection-item">
-        <!-- 连接头部 - 使用新组件 -->
-        <ConnectionHeader 
+        <ConnectionNode 
           :connection="connection"
-          @toggle="toggleConnection"
+          :selected-node="selectedNode"
+          @node-click="handleNodeClick"
+          @node-expand="handleNodeExpand"
+          @node-context-menu="handleContextMenu"
         />
-        
-        <!-- 展开的结构树 -->
-        <div v-if="connection.expanded" class="connection-children">
-          <div v-if="connection.loading" class="loading-item">
-            <i class="fas fa-spinner fa-spin"></i>
-            正在加载数据库结构...
-          </div>
-          
-          <div v-else-if="connection.error" class="error-item">
-            <i class="fas fa-exclamation-triangle"></i>
-            {{ connection.error }}
-            <button @click="loadConnectionStructure(connection)" class="retry-btn-small">重试</button>
-          </div>
-          
-          <!-- 使用专用数据库组件 -->
-          <component
-            v-else-if="hasSpecialComponent(connection.config.db_type) && connection.structure"
-            :is="getDatabaseComponent(connection.config.db_type)"
-            :structure="connection.structure"
-            :connection-id="connection.connectionId"
-            :parent-connection="connection"
-            :selected-node="selectedNode"
-            @node-click="handleNodeClick"
-          />
-          
-          <!-- 回退到通用组件 -->
-          <DatabaseTreeNode
-            v-else
-            v-for="child in connection.children"
-            :key="child.key"
-            :node="child"
-            :selected="selectedNode?.key === child.key"
-            @node-click="handleNodeClick"
-          />
-        </div>
       </div>
     </div>
 
@@ -86,19 +53,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineAsyncComponent } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
-import ConnectionHeader from './db/common/ConnectionHeader.vue'
-import DatabaseTreeNode from '@/components/common/DatabaseTreeNode.vue'
-import DatabaseService from '@/services/databaseService'
-
-// 动态组件映射 - 使用 defineAsyncComponent
-const DB_COMPONENTS = {
-  'MySQL': defineAsyncComponent(() => import('./db/mysql/MySQLTreeNode.vue')),
-  'PostgreSQL': defineAsyncComponent(() => import('./db/mysql/MySQLTreeNode.vue')), // PostgreSQL 使用相同的逻辑
-  // 'Redis': defineAsyncComponent(() => import('./db/redis/RedisTreeNode.vue')),
-  // 'MongoDB': defineAsyncComponent(() => import('./db/mongodb/MongoTreeNode.vue'))
-}
+import ConnectionNode from './db/common/ConnectionNode.vue'
 
 // Store
 const connectionStore = useConnectionStore()
@@ -107,10 +64,7 @@ const connectionStore = useConnectionStore()
 const loading = ref(false)
 const error = ref('')
 const selectedNode = ref(null)
-
-// 简化的响应式数据
 const connections = ref([])
-const loadingConnections = ref({})
 
 // 生命周期
 onMounted(async () => {
@@ -127,18 +81,14 @@ async function loadSavedConnections() {
   try {
     const savedConfigs = await connectionStore.loadConnectionConfigs()
     
-    // 转换为连接节点格式
+    // 转换为连接节点格式（简化版）
     const connectionNodes = Object.entries(savedConfigs).map(([name, config]) => ({
-      key: `connection-${name}`,
+      id: `connection-${name}`, // 连接ID，用于Tauri后端调用
+      key: `connection-${name}`, // Vue key
       name: name,
-      type: 'connection',
       config: config,
       status: getConnectionStatus(name),
-      info: `${config.host}:${config.port}`,
-      children: [],
-      expanded: false,
-      loading: false,
-      error: ''
+      expanded: false
     }))
     
     connections.value = connectionNodes
@@ -161,150 +111,36 @@ async function refreshConnections() {
  * 获取连接状态
  */
 function getConnectionStatus(connectionName) {
-  // 首先检查是否有保存的连接ID
-  const savedConnection = connections.value.find(conn => conn.name === connectionName)
-  if (savedConnection && savedConnection.connectionId) {
-    // 检查是否在活动连接中
-    const isActive = connectionStore.activeConnections.find(
-      conn => conn.id === savedConnection.connectionId
-    )
-    return isActive ? 'connected' : 'disconnected'
-  }
-  
-  // 如果没有连接ID，检查传统方式
   const isActive = connectionStore.activeConnections.find(
     conn => conn.name === connectionName
   )
-  
   return isActive ? 'connected' : 'disconnected'
-}
-
-/**
- * 切换连接展开状态
- */
-async function toggleConnection(connection) {
-  if (connection.loading) return
-  
-  connection.expanded = !connection.expanded
-  
-  if (connection.expanded && connection.children.length === 0) {
-    await loadConnectionStructure(connection)
-  }
-}
-
-/**
- * 动态加载连接结构
- */
-async function loadConnectionStructure(connection) {
-  connection.loading = true
-  connection.error = ''
-  
-  try {
-    // 1. 先建立连接，获取连接ID
-    const connectionId = await connectionStore.connectToDatabase(connection.config)
-    
-    if (!connectionId) {
-      throw new Error('连接建立失败，未获得连接ID')
-    }
-    
-    // 保存连接ID到连接对象中
-    connection.connectionId = connectionId
-    // 更新连接状态
-    connection.status = 'connected'
-    
-    // 2. 使用新的分离式API获取数据库列表（轻量级）
-    const databaseListResponse = await DatabaseService.getDatabases(connectionId)
-    
-    // 保存轻量级结构数据供专用组件使用
-    connection.structure = {
-      connection_id: connectionId,
-      db_type: databaseListResponse.db_type,
-      databases: databaseListResponse.databases.map(db => ({
-        name: db.name,
-        size_info: db.size_info,
-        tables: [], // 暂时为空，按需加载
-        views: [],
-        procedures: [],
-        functions: [],
-        redis_keys: null,
-        mongodb_collections: null,
-        // 添加统计信息
-        table_count: db.table_count,
-        has_tables: db.has_tables,
-        has_views: db.has_views,
-        has_procedures: db.has_procedures,
-        has_functions: db.has_functions
-      })),
-      connection_info: {
-        host: connection.config.host,
-        port: connection.config.port,
-        username: connection.config.username,
-        database_name: connection.config.database,
-        server_version: null
-      }
-    }
-    
-    // 3. 构建简化的子节点（保持向后兼容）
-    connection.children = buildLightweightChildren(databaseListResponse, connection)
-  } catch (err) {
-    connection.error = err.message || '加载数据库结构失败'
-    connection.status = 'error'
-    console.error('Error loading connection structure:', err)
-  } finally {
-    connection.loading = false
-  }
-}
-
-/**
- * 构建轻量级子节点（基于新的分离式API）
- */
-function buildLightweightChildren(databaseListResponse, parentConnection) {
-  const children = []
-  
-  databaseListResponse.databases.forEach(db => {
-    const dbNode = {
-      key: `${parentConnection.key}-${db.name}`,
-      name: db.name,
-      type: 'database',
-      info: `${db.table_count || 0} 表`,
-      children: [], // 暂时为空，当用户点击数据库时按需加载
-      expanded: false,
-      // 添加数据库的统计信息
-      meta: {
-        table_count: db.table_count,
-        has_tables: db.has_tables,
-        has_views: db.has_views,
-        has_procedures: db.has_procedures,
-        has_functions: db.has_functions,
-        size_info: db.size_info
-      }
-    }
-    children.push(dbNode)
-  })
-  
-  return children
-}
-
-/**
- * 获取数据库专用组件
- */
-function getDatabaseComponent(dbType) {
-  return DB_COMPONENTS[dbType] || null
-}
-
-/**
- * 检查是否有专用组件
- */
-function hasSpecialComponent(dbType) {
-  return !!DB_COMPONENTS[dbType]
 }
 
 /**
  * 处理节点点击事件
  */
-function handleNodeClick(node) {
-  selectedNode.value = node
-  console.log('Selected node:', node)
+function handleNodeClick(nodeData) {
+  selectedNode.value = nodeData
+  console.log('Selected node:', nodeData)
+  
+  // 发射到父组件或全局状态管理
+  // emit('node-selected', nodeData)
+}
+
+/**
+ * 处理节点展开事件
+ */
+function handleNodeExpand(nodeData) {
+  console.log('Node expanded:', nodeData)
+}
+
+/**
+ * 处理右键菜单事件
+ */
+function handleContextMenu(contextData) {
+  console.log('Context menu:', contextData)
+  // 可以在这里显示右键菜单
 }
 </script>
 
@@ -366,65 +202,9 @@ function handleNodeClick(node) {
   padding: 8px;
 }
 
-.connection-group {
-  margin-bottom: 16px;
-}
-
 .connection-item {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
-
-.connection-children {
-  margin-left: 20px;
-  margin-top: 8px;
-  border-left: 2px solid #dee2e6;
-  padding-left: 12px;
-  animation: slideDown 0.2s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.loading-item,
-.error-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: #6c757d;
-  border-radius: 4px;
-  background: #f8f9fa;
-}
-
-.error-item {
-  color: #dc3545;
-  background: #f8d7da;
-}
-
-.retry-btn-small {
-  margin-left: auto;
-  padding: 2px 6px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-}
-
-.retry-btn-small:hover {
-  background: #0056b3;
-}
-
 
 .empty-state,
 .loading-state,
