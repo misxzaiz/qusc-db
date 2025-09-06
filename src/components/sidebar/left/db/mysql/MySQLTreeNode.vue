@@ -61,7 +61,7 @@ const treeNodes = computed(() => {
       key: `${props.parentConnection.key}-${db.name}`,
       name: db.name,
       type: 'database',
-      info: `${db.table_count || 0} 表`,
+      info: db.table_count ? `${db.table_count} 表` : '',
       children: databaseTablesCache.value[db.name] || [], // 使用缓存的表信息
       expanded: false,
       meta: {

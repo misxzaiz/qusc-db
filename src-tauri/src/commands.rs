@@ -334,16 +334,12 @@ pub async fn get_databases_2(
     // 构建轻量级数据库信息（不获取具体表信息）
     let mut databases = Vec::new();
     for db_name in database_names {
-        // 这里可以根据需要获取一些基础统计信息
-        // 暂时使用估算值，实际实现时可以执行轻量级查询获取准确统计
         let (table_count, estimated_size) = match db_type {
             DatabaseType::Redis => {
-                // Redis 可以快速获取键数量
-                (Some(0), 1024 * 100) // 估算 100KB
+                (None, 0)
             },
             _ => {
-                // SQL 数据库暂时使用估算值，避免耗时的表遍历
-                (Some(10), 1024 * 500) // 估算 10 个表，500KB
+                (None, 0)
             }
         };
         
