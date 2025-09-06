@@ -90,7 +90,8 @@
       "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
       "Bash(move \"enhanced_types_test.rs\" \"tests.rs\")",
       "Bash(powershell:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

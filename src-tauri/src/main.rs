@@ -44,10 +44,14 @@ async fn main() {
             mcp_execute_smart_query,
             mcp_list_tools,
             mcp_health_check,
-            // 新增的增强版命令
+            // 增强版命令
             execute_query_enhanced,
             get_ui_config,
-            get_query_suggestions
+            get_query_suggestions,
+            // 新增的数据库结构导航API
+            get_database_structure,
+            get_redis_structure,
+            get_mongodb_structure
         ])
         .setup(|app| {
             info!("Application setup completed");

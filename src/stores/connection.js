@@ -135,6 +135,19 @@ export const useConnectionStore = defineStore('connection', () => {
             connections.value.set(connectionId, connectionInfo)
             currentConnection.value = connectionInfo
             
+            // 更新活动连接列表
+            const activeConn = {
+              id: connectionId,
+              name: `${config.host}:${config.port}`,
+              type: config.db_type,
+              config: config
+            }
+            
+            // 检查是否已在活动连接列表中
+            if (!activeConnections.value.find(conn => conn.id === connectionId)) {
+              activeConnections.value.push(activeConn)
+            }
+            
             console.log('连接保存后数量:', connections.value.size)
 
             // 获取数据库结构
@@ -185,6 +198,12 @@ export const useConnectionStore = defineStore('connection', () => {
 
       connections.value.delete(connectionId)
       schemas.value.delete(connectionId)
+
+      // 从活动连接列表中移除
+      const index = activeConnections.value.findIndex(conn => conn.id === connectionId)
+      if (index > -1) {
+        activeConnections.value.splice(index, 1)
+      }
 
       if (currentConnection.value?.id === connectionId) {
         currentConnection.value = null

@@ -532,3 +532,175 @@ pub async fn get_query_suggestions(
         },
     ])
 }
+
+// ===== 新增：数据库结构导航API =====
+
+/// 获取完整的数据库结构用于导航树
+#[tauri::command]
+pub async fn get_database_structure(
+    connection_id: String,
+    state: State<'_, AppState>,
+) -> Result<DatabaseStructure, String> {
+    let connections = state.connections.lock().await;
+    let connection = connections.get(&connection_id)
+        .ok_or("连接未找到")?;
+
+    // 获取数据库列表
+    let databases = connection.get_databases().await
+        .map_err(|e| format!("获取数据库列表失败: {}", e))?;
+    
+    // 确定数据库类型（简化实现）
+    let db_type = DatabaseType::MySQL; // 这里应该从连接信息中获取
+    
+    let mut database_nodes = Vec::new();
+    
+    // 为每个数据库获取详细信息
+    for db_name in databases {
+        let mut db_connection = connections.get(&connection_id)
+            .ok_or("连接未找到")?;
+        
+        // 切换到目标数据库
+        // db_connection.use_database(&db_name).await
+        //     .map_err(|e| format!("切换数据库失败: {}", e))?;
+        
+        // 获取表信息
+        let tables_info = connection.get_schema().await
+            .map_err(|e| format!("获取表结构失败: {}", e))?;
+        
+        let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
+            TableNode {
+                name: table.name.clone(),
+                size_info: Some(SizeInfo {
+                    bytes: 1024 * 200, // 模拟数据
+                    formatted: "200KB".to_string(),
+                }),
+                row_count: Some(100), // 模拟数据
+                table_type: TableType::Table,
+            }
+        }).collect();
+        
+        database_nodes.push(DatabaseNode {
+            name: db_name,
+            size_info: Some(SizeInfo {
+                bytes: 1024 * 1024 * 10, // 模拟10MB
+                formatted: "10MB".to_string(),
+            }),
+            tables,
+            views: vec![], // 稍后实现
+            procedures: vec![], // 稍后实现
+            functions: vec![], // 稍后实现
+            redis_keys: None,
+            mongodb_collections: None,
+        });
+    }
+    
+    Ok(DatabaseStructure {
+        connection_id: connection_id.clone(),
+        db_type,
+        databases: database_nodes,
+        connection_info: ConnectionInfo {
+            host: "localhost".to_string(), // 从配置获取
+            port: 3306, // 从配置获取
+            username: Some("root".to_string()), // 从配置获取
+            database_name: None,
+            server_version: Some("8.0.30".to_string()), // 查询获取
+        },
+    })
+}
+
+/// 获取Redis键列表和统计信息
+#[tauri::command]
+pub async fn get_redis_structure(
+    connection_id: String,
+    database_index: Option<i64>,
+    state: State<'_, AppState>,
+) -> Result<RedisKeyInfo, String> {
+    let connections = state.connections.lock().await;
+    let _connection = connections.get(&connection_id)
+        .ok_or("连接未找到")?;
+
+    // 模拟Redis键信息
+    Ok(RedisKeyInfo {
+        database_index: database_index.unwrap_or(0),
+        key_count: 1234,
+        expires_count: 156,
+        memory_usage: Some(2048576), // 2MB
+        sample_keys: vec![
+            RedisKeyNode {
+                key: "string:user:100".to_string(),
+                data_type: RedisDataType::String,
+                ttl: None,
+                size: Some(64),
+            },
+            RedisKeyNode {
+                key: "hash:product:500".to_string(),
+                data_type: RedisDataType::Hash,
+                ttl: Some(3600),
+                size: Some(128),
+            },
+            RedisKeyNode {
+                key: "list:queue:emails".to_string(),
+                data_type: RedisDataType::List,
+                ttl: None,
+                size: Some(256),
+            },
+        ],
+    })
+}
+
+/// 获取MongoDB集合和索引信息
+#[tauri::command]
+pub async fn get_mongodb_structure(
+    connection_id: String,
+    database_name: String,
+    state: State<'_, AppState>,
+) -> Result<MongoCollectionInfo, String> {
+    let connections = state.connections.lock().await;
+    let _connection = connections.get(&connection_id)
+        .ok_or("连接未找到")?;
+
+    // 模拟MongoDB集合信息
+    Ok(MongoCollectionInfo {
+        collections: vec![
+            MongoCollectionNode {
+                name: "users".to_string(),
+                document_count: Some(1500),
+                size: Some(1024 * 512), // 512KB
+                indexes: vec![
+                    IndexInfo {
+                        name: "_id_".to_string(),
+                        columns: vec!["_id".to_string()],
+                        unique: true,
+                        index_type: "btree".to_string(),
+                    },
+                    IndexInfo {
+                        name: "email_1".to_string(),
+                        columns: vec!["email".to_string()],
+                        unique: true,
+                        index_type: "btree".to_string(),
+                    },
+                ],
+            },
+            MongoCollectionNode {
+                name: "products".to_string(),
+                document_count: Some(800),
+                size: Some(1024 * 256), // 256KB
+                indexes: vec![
+                    IndexInfo {
+                        name: "_id_".to_string(),
+                        columns: vec!["_id".to_string()],
+                        unique: true,
+                        index_type: "btree".to_string(),
+                    },
+                ],
+            },
+        ],
+        gridfs_buckets: vec![
+            GridFSBucketNode {
+                name: "uploads".to_string(),
+                file_count: Some(42),
+                total_size: Some(1024 * 1024 * 50), // 50MB
+            },
+        ],
+    })
+}

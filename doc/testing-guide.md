@@ -407,13 +407,13 @@ import WorkspaceView from '@/views/WorkspaceView.vue'
 import { useConnectionStore } from '@/stores/connection'
 
 // Mock Tauri invoke
-vi.mock('@tauri-apps/api/tauri', () => ({
+vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn()
 }))
 
 describe('Query Execution Integration', () => {
   it('executes query and displays results', async () => {
-    const { invoke } = await import('@tauri-apps/api/tauri')
+    const { invoke } = await import('@tauri-apps/api/core')
     const pinia = createPinia()
     
     // Mock successful query execution
@@ -469,7 +469,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useConnectionStore } from '@/stores/connection'
 
-vi.mock('@tauri-apps/api/tauri')
+vi.mock('@tauri-apps/api/core')
 
 describe('Connection Store', () => {
   beforeEach(() => {
@@ -477,7 +477,7 @@ describe('Connection Store', () => {
   })
 
   it('creates connection successfully', async () => {
-    const { invoke } = await import('@tauri-apps/api/tauri')
+    const { invoke } = await import('@tauri-apps/api/core')
     invoke.mockResolvedValue('connection-id-123')
 
     const store = useConnectionStore()
@@ -496,7 +496,7 @@ describe('Connection Store', () => {
   })
 
   it('handles connection failure', async () => {
-    const { invoke } = await import('@tauri-apps/api/tauri')
+    const { invoke } = await import('@tauri-apps/api/core')
     invoke.mockRejectedValue(new Error('Connection failed'))
 
     const store = useConnectionStore()
@@ -507,7 +507,7 @@ describe('Connection Store', () => {
   })
 
   it('executes query with correct parameters', async () => {
-    const { invoke } = await import('@tauri-apps/api/tauri')
+    const { invoke } = await import('@tauri-apps/api/core')
     const mockResult = { db_type: 'MySQL', data: { type: 'Relational' } }
     invoke.mockResolvedValue(mockResult)
 
@@ -800,7 +800,7 @@ it('shows success message after save', async () => {
 ### 4. Mock 最佳实践
 ```javascript
 // ✅ 在需要的地方 Mock
-vi.mock('@tauri-apps/api/tauri', () => ({
+vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn()
 }))
 

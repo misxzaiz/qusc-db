@@ -142,6 +142,143 @@ impl DatabaseType {
     }
 }
 
+// ===== 数据库结构相关 =====
+
+/// 完整的数据库结构，用于构建导航树
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseStructure {
+    pub connection_id: String,
+    pub db_type: DatabaseType,
+    pub databases: Vec<DatabaseNode>,
+    pub connection_info: ConnectionInfo,
+}
+
+/// 数据库节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseNode {
+    pub name: String,
+    pub size_info: Option<SizeInfo>,
+    pub tables: Vec<TableNode>,
+    pub views: Vec<ViewNode>,
+    pub procedures: Vec<ProcedureNode>,
+    pub functions: Vec<FunctionNode>,
+    pub redis_keys: Option<RedisKeyInfo>,
+    pub mongodb_collections: Option<MongoCollectionInfo>,
+}
+
+/// 表节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableNode {
+    pub name: String,
+    pub size_info: Option<SizeInfo>,
+    pub row_count: Option<u64>,
+    pub table_type: TableType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TableType {
+    Table,
+    SystemTable,
+    TemporaryTable,
+}
+
+/// 视图节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewNode {
+    pub name: String,
+    pub definition: Option<String>,
+}
+
+/// 存储过程节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProcedureNode {
+    pub name: String,
+    pub parameters: Vec<ParameterInfo>,
+}
+
+/// 函数节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FunctionNode {
+    pub name: String,
+    pub return_type: Option<String>,
+    pub parameters: Vec<ParameterInfo>,
+}
+
+/// 参数信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParameterInfo {
+    pub name: String,
+    pub data_type: String,
+    pub direction: ParameterDirection,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ParameterDirection {
+    In,
+    Out,
+    InOut,
+}
+
+/// Redis 键信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedisKeyInfo {
+    pub database_index: i64,
+    pub key_count: u64,
+    pub expires_count: u64,
+    pub memory_usage: Option<u64>,
+    pub sample_keys: Vec<RedisKeyNode>,
+}
+
+/// Redis 键节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedisKeyNode {
+    pub key: String,
+    pub data_type: RedisDataType,
+    pub ttl: Option<i64>,
+    pub size: Option<u64>,
+}
+
+/// MongoDB 集合信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MongoCollectionInfo {
+    pub collections: Vec<MongoCollectionNode>,
+    pub gridfs_buckets: Vec<GridFSBucketNode>,
+}
+
+/// MongoDB 集合节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MongoCollectionNode {
+    pub name: String,
+    pub document_count: Option<u64>,
+    pub size: Option<u64>,
+    pub indexes: Vec<IndexInfo>,
+}
+
+/// GridFS 桶节点
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GridFSBucketNode {
+    pub name: String,
+    pub file_count: Option<u64>,
+    pub total_size: Option<u64>,
+}
+
+/// 大小信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SizeInfo {
+    pub bytes: u64,
+    pub formatted: String, // "1.2MB", "680KB" 等
+}
+
+/// 连接信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectionInfo {
+    pub host: String,
+    pub port: u16,
+    pub username: Option<String>,
+    pub database_name: Option<String>,
+    pub server_version: Option<String>,
+}
+
 // ===== 扩展的列信息 =====
 
 /// 扩展的列信息，包含更多元数据
@@ -440,22 +577,6 @@ pub struct FunctionInfo {
     pub name: String,
     pub parameters: Vec<ParameterInfo>,
     pub return_type: String,
-}
-
-/// 参数信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParameterInfo {
-    pub name: String,
-    pub data_type: String,
-    pub direction: ParameterDirection,
-}
-
-/// 参数方向
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum ParameterDirection {
-    In,
-    Out,
-    InOut,
 }
 
 /// 查询建议
