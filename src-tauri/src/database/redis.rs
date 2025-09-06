@@ -488,7 +488,8 @@ impl DatabaseConnection for RedisConnection {
             .ok_or_else(|| anyhow::anyhow!("Not connected"))?;
         
         let mut conn = conn_arc.lock().await;
-        let _: RedisResult<()> = redis::cmd("SELECT").arg(db_index).query(&mut *conn);
+        let select_result: RedisResult<()> = redis::cmd("SELECT").arg(db_index).query(&mut *conn);
+        select_result.map_err(|e| anyhow::anyhow!("Failed to select Redis database {}: {}", db_index, e))?;
         self.current_database = db_index;
         Ok(())
     }

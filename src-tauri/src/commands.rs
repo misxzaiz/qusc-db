@@ -417,8 +417,18 @@ pub async fn get_database_tables(
     let (tables, views, procedures, functions, redis_keys, mongodb_collections) = match db_type {
         DatabaseType::Redis => {
             // Redis 特殊处理：database_name 实际上是数据库索引
+            println!("Redis: 准备切换到数据库 {}", database_name);
+            
+            // 先切换到指定的数据库
+            connection.use_database(&database_name).await
+                .map_err(|e| format!("切换Redis数据库失败: {}", e))?;
+            
+            println!("Redis: 成功切换到数据库 {}", database_name);
+                
             let keys_result = connection.execute("KEYS *").await
                 .map_err(|e| format!("获取Redis键列表失败: {}", e))?;
+            
+            println!("Redis: 在数据库 {} 中找到 {} 个键", database_name, keys_result.rows.len());
             
             let key_count = keys_result.rows.len() as u64;
             let sample_keys: Vec<RedisKeyNode> = keys_result.rows.into_iter()
@@ -775,8 +785,8 @@ pub async fn get_database_structure(
     connection_id: String,
     state: State<'_, AppState>,
 ) -> Result<DatabaseStructure, String> {
-    let connections = state.connections.lock().await;
-    let connection = connections.get(&connection_id)
+    let mut connections = state.connections.lock().await;
+    let connection = connections.get_mut(&connection_id)
         .ok_or("连接未找到")?;
 
     // 获取数据库列表
@@ -801,13 +811,13 @@ pub async fn get_database_structure(
     
     // 为每个数据库获取详细信息
     for db_name in databases {
-        let _db_connection = connections.get(&connection_id)
-            .ok_or("连接未找到")?;
-        
         // 根据数据库类型处理不同的结构
         let (tables, redis_keys, mongodb_collections) = match db_type {
             DatabaseType::Redis => {
-                // 对于Redis，获取键列表
+                // 对于Redis，先切换到指定数据库，然后获取键列表
+                connection.use_database(&db_name).await
+                    .map_err(|e| format!("切换Redis数据库失败: {}", e))?;
+                    
                 let keys_result = connection.execute("KEYS *").await
                     .map_err(|e| format!("获取Redis键列表失败: {}", e))?;
                 
