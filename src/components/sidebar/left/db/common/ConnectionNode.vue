@@ -37,7 +37,7 @@
           v-for="database in databases"
           :key="database.name"
           :database="database"
-          :connection-id="connection.id"
+          :connection-id="connection.realConnectionId"
           :db-type="connection.config.db_type"
           :selected-node="selectedNode"
           @node-click="handleNodeClick"
@@ -103,6 +103,11 @@ const statusText = computed(() => {
 
 async function handleToggle() {
   if (!isExpanded.value) {
+    // 1. 先建立连接（如果还未连接）
+    if (props.connection.status !== 'connected') {
+      await establishConnection()
+    }
+    // 2. 再加载数据库列表
     await loadDatabases()
   }
   isExpanded.value = !isExpanded.value
@@ -114,15 +119,67 @@ async function handleToggle() {
   })
 }
 
+async function establishConnection() {
+  if (props.connection.realConnectionId) {
+    // 已经有真实连接ID，检查连接状态
+    try {
+      const isConnected = await DatabaseService.checkConnectionStatus(props.connection.realConnectionId)
+      if (isConnected) {
+        props.connection.status = 'connected'
+        return
+      }
+    } catch (err) {
+      // 连接失效，需要重新连接
+      props.connection.realConnectionId = null
+    }
+  }
+  
+  loading.value = true
+  error.value = null
+  props.connection.status = 'connecting'
+  
+  try {
+    console.log('建立数据库连接:', props.connection.config)
+    
+    // 调用 connect_database 获取真实连接ID
+    const realConnectionId = await DatabaseService.connectToDatabase(props.connection.config)
+    
+    if (!realConnectionId) {
+      throw new Error('连接建立失败，未获得连接ID')
+    }
+    
+    // 保存真实连接ID
+    props.connection.realConnectionId = realConnectionId
+    props.connection.status = 'connected'
+    
+    console.log(`连接建立成功，连接ID: ${realConnectionId}`)
+  } catch (err) {
+    props.connection.status = 'error'
+    error.value = err.message || '连接建立失败'
+    console.error('ConnectionNode: 建立连接失败', err)
+    throw err // 抛出错误，阻止后续数据库列表加载
+  } finally {
+    loading.value = false
+  }
+}
+
 async function loadDatabases() {
   if (databases.value.length > 0) return
+  if (!props.connection.realConnectionId) {
+    error.value = '缺少有效的连接ID'
+    return
+  }
   
   loading.value = true
   error.value = null
   
   try {
-    const response = await DatabaseService.getDatabases(props.connection.id)
+    console.log('加载数据库列表，连接ID:', props.connection.realConnectionId)
+    
+    const response = await DatabaseService.getDatabases(props.connection.realConnectionId)
     databases.value = response.databases
+    
+    console.log(`成功加载 ${response.databases.length} 个数据库`)
   } catch (err) {
     error.value = err.message || '加载数据库列表失败'
     console.error('ConnectionNode: 加载数据库失败', err)
@@ -132,7 +189,17 @@ async function loadDatabases() {
 }
 
 async function handleRetry() {
-  await loadDatabases()
+  // 重试时重新建立连接和加载数据库列表
+  databases.value = [] // 清空旧数据
+  props.connection.realConnectionId = null // 清空旧连接ID
+  props.connection.status = 'disconnected' // 重置状态
+  
+  try {
+    await establishConnection()
+    await loadDatabases()
+  } catch (err) {
+    console.error('重试失败:', err)
+  }
 }
 
 function handleContextMenu(event) {

@@ -83,12 +83,15 @@ async function loadSavedConnections() {
     
     // 转换为连接节点格式（简化版）
     const connectionNodes = Object.entries(savedConfigs).map(([name, config]) => ({
-      id: `connection-${name}`, // 连接ID，用于Tauri后端调用
+      id: `connection-${name}`, // Vue 显示ID
       key: `connection-${name}`, // Vue key
       name: name,
       config: config,
       status: getConnectionStatus(name),
-      expanded: false
+      expanded: false,
+      realConnectionId: null, // 真实的数据库连接ID，在连接时获取
+      loading: false,
+      error: null
     }))
     
     connections.value = connectionNodes
@@ -111,10 +114,16 @@ async function refreshConnections() {
  * 获取连接状态
  */
 function getConnectionStatus(connectionName) {
-  const isActive = connectionStore.activeConnections.find(
+  // 检查活动连接
+  const activeConnection = connectionStore.activeConnections.find(
     conn => conn.name === connectionName
   )
-  return isActive ? 'connected' : 'disconnected'
+  
+  if (activeConnection) {
+    return 'connected'
+  }
+  
+  return 'disconnected'
 }
 
 /**
@@ -124,8 +133,17 @@ function handleNodeClick(nodeData) {
   selectedNode.value = nodeData
   console.log('Selected node:', nodeData)
   
-  // 发射到父组件或全局状态管理
-  // emit('node-selected', nodeData)
+  // 如果是连接节点的点击，可能需要更新连接状态
+  if (nodeData.type === 'connection') {
+    const connection = connections.value.find(conn => conn.key === nodeData.connection.key)
+    if (connection) {
+      // 同步连接状态
+      connection.status = nodeData.connection.status
+      connection.realConnectionId = nodeData.connection.realConnectionId
+      connection.loading = nodeData.connection.loading
+      connection.error = nodeData.connection.error
+    }
+  }
 }
 
 /**
@@ -140,7 +158,15 @@ function handleNodeExpand(nodeData) {
  */
 function handleContextMenu(contextData) {
   console.log('Context menu:', contextData)
-  // 可以在这里显示右键菜单
+  
+  // 可以实现连接管理菜单
+  if (contextData.type === 'connection') {
+    // 显示连接相关的右键菜单
+    // - 重新连接
+    // - 断开连接
+    // - 删除连接配置
+    // - 编辑连接配置
+  }
 }
 </script>
 

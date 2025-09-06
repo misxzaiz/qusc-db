@@ -153,6 +153,64 @@ import { invoke } from '@tauri-apps/api/core'
 
 export class DatabaseService {
   
+  // ===== 连接管理方法 =====
+  
+  /**
+   * 连接到数据库
+   * @param {Object} config - 数据库配置
+   * @param {string} config.db_type - 数据库类型
+   * @param {string} config.host - 主机地址
+   * @param {number} config.port - 端口
+   * @param {string} [config.username] - 用户名
+   * @param {string} [config.password] - 密码
+   * @param {string} [config.database] - 数据库名
+   * @returns {Promise<string>} 连接ID
+   */
+  static async connectToDatabase(config) {
+    try {
+      console.log('正在连接数据库:', config)
+      return await invoke('connect_database', {
+        dbType: config.db_type,
+        host: config.host,
+        port: config.port,
+        username: config.username || null,
+        password: config.password || null,
+        database: config.database || null
+      })
+    } catch (error) {
+      console.error('Failed to connect to database:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * 检查连接状态
+   * @param {string} connectionId - 连接ID
+   * @returns {Promise<boolean>} 是否已连接
+   */
+  static async checkConnectionStatus(connectionId) {
+    try {
+      return await invoke('get_connection_status', { connectionId })
+    } catch (error) {
+      console.error('Failed to check connection status:', error)
+      return false
+    }
+  }
+  
+  /**
+   * 断开数据库连接
+   * @param {string} connectionId - 连接ID
+   * @returns {Promise<void>}
+   */
+  static async disconnectDatabase(connectionId) {
+    try {
+      return await invoke('disconnect_database', { connectionId })
+    } catch (error) {
+      console.error('Failed to disconnect database:', error)
+      throw error
+    }
+  }
+  
   // ===== 新的分离式API方法 =====
   
   /**
