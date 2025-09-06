@@ -54,8 +54,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import DatabaseService from '@/services/databaseService'
+
+// 预定义表容器组件映射
+const TABLE_COMPONENTS = {
+  'MySQL': defineAsyncComponent(() => import('../mysql/MySQLTablesContainer.vue')),
+  'PostgreSQL': defineAsyncComponent(() => import('../mysql/MySQLTablesContainer.vue')), // 暂时复用MySQL
+  'Redis': defineAsyncComponent(() => import('../redis/RedisKeysContainer.vue')),
+  'MongoDB': defineAsyncComponent(() => import('../mongodb/MongoCollectionsContainer.vue')),
+  'default': defineAsyncComponent(() => import('./DefaultTablesContainer.vue'))
+}
 
 const props = defineProps({
   database: {
@@ -101,18 +110,7 @@ const isSelected = computed(() => {
 })
 
 function getTableComponent() {
-  switch (props.dbType) {
-    case 'MySQL':
-      return () => import('../mysql/MySQLTablesContainer.vue')
-    case 'PostgreSQL':
-      return () => import('../mysql/MySQLTablesContainer.vue') // 暂时复用MySQL
-    case 'Redis':
-      return () => import('../redis/RedisKeysContainer.vue')
-    case 'MongoDB':
-      return () => import('../mongodb/MongoCollectionsContainer.vue')
-    default:
-      return () => import('./DefaultTablesContainer.vue')
-  }
+  return TABLE_COMPONENTS[props.dbType] || TABLE_COMPONENTS['default']
 }
 
 async function handleToggle() {
