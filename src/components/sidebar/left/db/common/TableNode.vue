@@ -12,9 +12,6 @@
         <span v-if="table.row_count" class="row-count">
           {{ formatCount(table.row_count) }} 行
         </span>
-        <span v-if="table.size_info" class="table-size">
-          {{ table.size_info.formatted }}
-        </span>
       </div>
     </div>
   </div>

@@ -14,9 +14,6 @@
       <span v-if="database.table_count" class="database-info">
         {{ database.table_count }} 表
       </span>
-      <span v-if="database.size_info" class="database-size">
-        {{ database.size_info.formatted }}
-      </span>
     </div>
     
     <div v-if="isExpanded" class="database-content">
