@@ -1,6 +1,6 @@
 use crate::mcp::tools::MCPTool;
 use crate::mcp::types::*;
-use crate::AppState;
+use crate::commands::AppState;
 use serde_json::{Value, json};
 use anyhow::Result;
 use async_trait::async_trait;

@@ -43,7 +43,11 @@ async fn main() {
             mcp_validate_sql,
             mcp_execute_smart_query,
             mcp_list_tools,
-            mcp_health_check
+            mcp_health_check,
+            // 新增的增强版命令
+            execute_query_enhanced,
+            get_ui_config,
+            get_query_suggestions
         ])
         .setup(|app| {
             info!("Application setup completed");

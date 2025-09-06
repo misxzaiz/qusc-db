@@ -64,7 +64,12 @@ pub struct ColumnInfo {
     pub primary_key: bool,
 }
 
+// 原有模块
 pub mod mysql;
 pub mod redis;
 pub mod postgresql;
 pub mod mongodb;
+
+// 新增的增强模块
+pub mod enhanced_types;
+pub mod test_adapter;

@@ -1,4 +1,8 @@
-use crate::database::{DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType, mysql::MySQLConnection, redis::RedisConnection, postgresql::PostgreSQLConnection, mongodb::MongoDBConnection};
+use crate::database::{
+    DatabaseConnection, ConnectionConfig, QueryResult, TableInfo, DatabaseType as LegacyDatabaseType, 
+    mysql::MySQLConnection, redis::RedisConnection, postgresql::PostgreSQLConnection, mongodb::MongoDBConnection,
+    enhanced_types::*, test_adapter::{AdapterConverter}
+};
 use crate::ai::{AIService, AIConfig, AIProvider, deepseek::DeepSeekService};
 use crate::mcp::{MCP};
 use tauri::State;
@@ -37,10 +41,10 @@ pub async fn connect_database(
     // 重构配置对象
     let config = ConnectionConfig {
         db_type: match db_type.as_str() {
-            "MySQL" => DatabaseType::MySQL,
-            "Redis" => DatabaseType::Redis,
-            "PostgreSQL" => DatabaseType::PostgreSQL,
-            "MongoDB" => DatabaseType::MongoDB,
+            "MySQL" => LegacyDatabaseType::MySQL,
+            "Redis" => LegacyDatabaseType::Redis,
+            "PostgreSQL" => LegacyDatabaseType::PostgreSQL,
+            "MongoDB" => LegacyDatabaseType::MongoDB,
             _ => return Err("Unsupported database type".to_string()),
         },
         host,
@@ -52,10 +56,10 @@ pub async fn connect_database(
     };
     
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
-        DatabaseType::MySQL => Box::new(MySQLConnection::new()),
-        DatabaseType::Redis => Box::new(RedisConnection::new()),
-        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
-        DatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
+        LegacyDatabaseType::MySQL => Box::new(MySQLConnection::new()),
+        LegacyDatabaseType::Redis => Box::new(RedisConnection::new()),
+        LegacyDatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
+        LegacyDatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     
@@ -107,10 +111,10 @@ pub async fn test_database_connection(
     // 重构配置对象
     let config = ConnectionConfig {
         db_type: match db_type.as_str() {
-            "MySQL" => DatabaseType::MySQL,
-            "Redis" => DatabaseType::Redis,
-            "PostgreSQL" => DatabaseType::PostgreSQL,
-            "MongoDB" => DatabaseType::MongoDB,
+            "MySQL" => LegacyDatabaseType::MySQL,
+            "Redis" => LegacyDatabaseType::Redis,
+            "PostgreSQL" => LegacyDatabaseType::PostgreSQL,
+            "MongoDB" => LegacyDatabaseType::MongoDB,
             _ => return Err("Unsupported database type".to_string()),
         },
         host,
@@ -121,10 +125,10 @@ pub async fn test_database_connection(
         options: std::collections::HashMap::new(),
     };
     let mut connection: Box<dyn DatabaseConnection> = match config.db_type {
-        DatabaseType::MySQL => Box::new(MySQLConnection::new()),
-        DatabaseType::Redis => Box::new(RedisConnection::new()),
-        DatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
-        DatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
+        LegacyDatabaseType::MySQL => Box::new(MySQLConnection::new()),
+        LegacyDatabaseType::Redis => Box::new(RedisConnection::new()),
+        LegacyDatabaseType::PostgreSQL => Box::new(PostgreSQLConnection::new()),
+        LegacyDatabaseType::MongoDB => Box::new(MongoDBConnection::new()),
         _ => return Err("Unsupported database type".to_string()),
     };
     
@@ -446,4 +450,85 @@ pub async fn mcp_health_check(state: State<'_, AppState>) -> Result<serde_json::
             Err(format!("MCP健康检查失败: {}", e))
         }
     }
+}
+
+// ===== 新增：增强版数据库命令 =====
+
+/// 执行查询并返回增强结果（测试版）
+#[tauri::command]
+pub async fn execute_query_enhanced(
+    connection_id: String,
+    query: String,
+    state: State<'_, AppState>,
+) -> Result<EnhancedQueryResult, String> {
+    let connections = state.connections.lock().await;
+    let connection = connections.get(&connection_id)
+        .ok_or("连接未找到")?;
+    
+    // 确定数据库类型（简化实现）
+    let db_type = DatabaseType::MySQL; // 这里应该从连接信息中获取真实类型
+    
+    // 使用测试适配器包装现有连接
+    let legacy_result = connection.execute(&query).await
+        .map_err(|e| format!("查询执行失败: {}", e))?;
+    
+    // 转换为增强结果
+    let enhanced_result = AdapterConverter::from_legacy_result(legacy_result, db_type);
+    
+    Ok(enhanced_result)
+}
+
+/// 获取UI配置信息
+#[tauri::command]
+pub async fn get_ui_config(
+    connection_id: String,
+    db_type: String,
+    _state: State<'_, AppState>,
+) -> Result<DatabaseUIConfig, String> {
+    let parsed_db_type = match db_type.as_str() {
+        "MySQL" => DatabaseType::MySQL,
+        "PostgreSQL" => DatabaseType::PostgreSQL,
+        "Redis" => DatabaseType::Redis,
+        "MongoDB" => DatabaseType::MongoDB,
+        "SQLite" => DatabaseType::SQLite,
+        _ => return Err("不支持的数据库类型".to_string()),
+    };
+    
+    Ok(AdapterConverter::get_ui_config_for_db_type(parsed_db_type))
+}
+
+/// 获取查询建议（基础版）
+#[tauri::command]
+pub async fn get_query_suggestions(
+    _connection_id: String,
+    _context: String,
+    _state: State<'_, AppState>,
+) -> Result<Vec<QuerySuggestion>, String> {
+    // 返回基础查询建议
+    Ok(vec![
+        QuerySuggestion {
+            text: "SELECT * FROM".to_string(),
+            description: "查询表数据".to_string(),
+            category: SuggestionCategory::Keyword,
+            score: 100,
+        },
+        QuerySuggestion {
+            text: "INSERT INTO".to_string(),
+            description: "插入数据".to_string(),
+            category: SuggestionCategory::Keyword,
+            score: 90,
+        },
+        QuerySuggestion {
+            text: "UPDATE".to_string(),
+            description: "更新数据".to_string(),
+            category: SuggestionCategory::Keyword,
+            score: 85,
+        },
+        QuerySuggestion {
+            text: "DELETE FROM".to_string(),
+            description: "删除数据".to_string(),
+            category: SuggestionCategory::Keyword,
+            score: 80,
+        },
+    ])
 }

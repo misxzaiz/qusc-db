@@ -87,7 +87,10 @@
       "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
       "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
       "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
-      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)"
+      "Read(/D:\\qusc\\qusc-db\\src\\components\\dialog/**)",
+      "Bash(move \"enhanced_types_test.rs\" \"tests.rs\")",
+      "Bash(powershell:*)",
+      "Bash(cargo test:*)"
     ],
     "deny": []
   }

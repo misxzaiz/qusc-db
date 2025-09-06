@@ -2,7 +2,7 @@ pub mod enhanced_context;
 pub mod sql_validation;
 pub mod smart_query;
 
-use crate::AppState;
+use crate::commands::AppState;
 use serde_json::Value;
 use anyhow::Result;
 use async_trait::async_trait;
