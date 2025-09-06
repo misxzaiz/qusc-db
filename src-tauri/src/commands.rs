@@ -10,8 +10,27 @@ use tokio::sync::Mutex;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+// 辅助函数：格式化字节数
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+    let mut size = bytes as f64;
+    let mut unit_index = 0;
+    
+    while size >= 1024.0 && unit_index < UNITS.len() - 1 {
+        size /= 1024.0;
+        unit_index += 1;
+    }
+    
+    if size == size as u64 as f64 {
+        format!("{}{}", size as u64, UNITS[unit_index])
+    } else {
+        format!("{:.1}{}", size, UNITS[unit_index])
+    }
+}
+
 pub struct AppState {
     pub connections: Mutex<HashMap<String, Box<dyn DatabaseConnection>>>,
+    pub connection_configs: Mutex<HashMap<String, ConnectionConfig>>,
     pub ai_service: Mutex<Option<Box<dyn AIService>>>,
     pub mcp_server: Mutex<Option<MCP>>,
 }
@@ -20,6 +39,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             connections: Mutex::new(HashMap::new()),
+            connection_configs: Mutex::new(HashMap::new()),
             ai_service: Mutex::new(None),
             mcp_server: Mutex::new(None),
         }
@@ -68,6 +88,8 @@ pub async fn connect_database(
         
     state.connections.lock().await
         .insert(connection_id.clone(), connection);
+    state.connection_configs.lock().await
+        .insert(connection_id.clone(), config);
         
     Ok(connection_id)
 }
@@ -151,6 +173,10 @@ pub async fn disconnect_database(
         connection.disconnect().await
             .map_err(|e| format!("断开连接失败: {}", e))?;
     }
+    
+    // 同时清理连接配置
+    state.connection_configs.lock().await.remove(&connection_id);
+    
     Ok(())
 }
 
@@ -465,8 +491,19 @@ pub async fn execute_query_enhanced(
     let connection = connections.get(&connection_id)
         .ok_or("连接未找到")?;
     
-    // 确定数据库类型（简化实现）
-    let db_type = DatabaseType::MySQL; // 这里应该从连接信息中获取真实类型
+    // 从连接配置中获取数据库类型
+    let configs = state.connection_configs.lock().await;
+    let config = configs.get(&connection_id)
+        .ok_or("连接配置未找到")?;
+    
+    // 转换数据库类型从Legacy到Enhanced
+    let db_type = match config.db_type {
+        LegacyDatabaseType::MySQL => DatabaseType::MySQL,
+        LegacyDatabaseType::PostgreSQL => DatabaseType::PostgreSQL,
+        LegacyDatabaseType::Redis => DatabaseType::Redis,
+        LegacyDatabaseType::MongoDB => DatabaseType::MongoDB,
+        LegacyDatabaseType::SQLite => DatabaseType::SQLite,
+    };
     
     // 使用测试适配器包装现有连接
     let legacy_result = connection.execute(&query).await
@@ -481,7 +518,7 @@ pub async fn execute_query_enhanced(
 /// 获取UI配置信息
 #[tauri::command]
 pub async fn get_ui_config(
-    connection_id: String,
+    _connection_id: String,
     db_type: String,
     _state: State<'_, AppState>,
 ) -> Result<DatabaseUIConfig, String> {
@@ -549,48 +586,126 @@ pub async fn get_database_structure(
     let databases = connection.get_databases().await
         .map_err(|e| format!("获取数据库列表失败: {}", e))?;
     
-    // 确定数据库类型（简化实现）
-    let db_type = DatabaseType::MySQL; // 这里应该从连接信息中获取
+    // 从连接配置中获取数据库类型
+    let configs = state.connection_configs.lock().await;
+    let config = configs.get(&connection_id)
+        .ok_or("连接配置未找到")?;
+    
+    // 转换数据库类型从Legacy到Enhanced
+    let db_type = match config.db_type {
+        LegacyDatabaseType::MySQL => DatabaseType::MySQL,
+        LegacyDatabaseType::PostgreSQL => DatabaseType::PostgreSQL,
+        LegacyDatabaseType::Redis => DatabaseType::Redis,
+        LegacyDatabaseType::MongoDB => DatabaseType::MongoDB,
+        LegacyDatabaseType::SQLite => DatabaseType::SQLite,
+    };
     
     let mut database_nodes = Vec::new();
     
     // 为每个数据库获取详细信息
     for db_name in databases {
-        let mut db_connection = connections.get(&connection_id)
+        let _db_connection = connections.get(&connection_id)
             .ok_or("连接未找到")?;
         
-        // 切换到目标数据库
-        // db_connection.use_database(&db_name).await
-        //     .map_err(|e| format!("切换数据库失败: {}", e))?;
-        
-        // 获取表信息
-        let tables_info = connection.get_schema().await
-            .map_err(|e| format!("获取表结构失败: {}", e))?;
-        
-        let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
-            TableNode {
-                name: table.name.clone(),
-                size_info: Some(SizeInfo {
-                    bytes: 1024 * 200, // 模拟数据
-                    formatted: "200KB".to_string(),
-                }),
-                row_count: Some(100), // 模拟数据
-                table_type: TableType::Table,
+        // 根据数据库类型处理不同的结构
+        let (tables, redis_keys, mongodb_collections) = match db_type {
+            DatabaseType::Redis => {
+                // 对于Redis，获取键列表
+                let keys_result = connection.execute("KEYS *").await
+                    .map_err(|e| format!("获取Redis键列表失败: {}", e))?;
+                
+                // 先获取键的总数
+                let key_count = keys_result.rows.len() as u64;
+                
+                // 构建Redis键信息
+                let sample_keys: Vec<RedisKeyNode> = keys_result.rows.into_iter()
+                    .take(100) // 限制显示前100个键
+                    .map(|row| {
+                        let key_name = row.get(0).unwrap_or(&"unknown".to_string()).clone();
+                        RedisKeyNode {
+                            key: key_name,
+                            data_type: RedisDataType::String, // 简化处理，后续可以通过TYPE命令获取真实类型
+                            ttl: None,
+                            size: None,
+                        }
+                    })
+                    .collect();
+                
+                let redis_key_info = RedisKeyInfo {
+                    database_index: 0, // 简化处理，可以从连接配置获取
+                    key_count,
+                    expires_count: 0, // 简化处理
+                    memory_usage: None,
+                    sample_keys,
+                };
+                
+                (vec![], Some(redis_key_info), None)
+            },
+            DatabaseType::MySQL | DatabaseType::PostgreSQL => {
+                // 获取表信息
+                let tables_info = connection.get_schema().await
+                    .map_err(|e| format!("获取表结构失败: {}", e))?;
+                
+                let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
+                    // 对于SQL数据库，使用合理的默认值
+                    let (row_count, size_bytes) = (None, 1024 * 50); // 50KB 默认大小
+                    
+                    TableNode {
+                        name: table.name.clone(),
+                        size_info: Some(SizeInfo {
+                            bytes: size_bytes,
+                            formatted: format_bytes(size_bytes),
+                        }),
+                        row_count,
+                        table_type: TableType::Table,
+                    }
+                }).collect();
+                
+                (tables, None, None)
+            },
+            _ => {
+                // 其他数据库类型，使用默认处理
+                let tables_info = connection.get_schema().await
+                    .map_err(|e| format!("获取表结构失败: {}", e))?;
+                
+                let tables: Vec<TableNode> = tables_info.into_iter().map(|table| {
+                    let (row_count, size_bytes) = (None, 1024 * 10); // 10KB 默认大小
+                    
+                    TableNode {
+                        name: table.name.clone(),
+                        size_info: Some(SizeInfo {
+                            bytes: size_bytes,
+                            formatted: format_bytes(size_bytes),
+                        }),
+                        row_count,
+                        table_type: TableType::Table,
+                    }
+                }).collect();
+                
+                (tables, None, None)
             }
-        }).collect();
+        };
+        
+        // 计算数据库大小（基于表数量的估算）
+        let estimated_db_bytes = (tables.len() as u64) * 1024 * 100; // 每表估计100KB
+        let estimated_db_bytes = if estimated_db_bytes < 1024 * 10 { 
+            1024 * 10 // 最小10KB 
+        } else { 
+            estimated_db_bytes 
+        };
         
         database_nodes.push(DatabaseNode {
             name: db_name,
             size_info: Some(SizeInfo {
-                bytes: 1024 * 1024 * 10, // 模拟10MB
-                formatted: "10MB".to_string(),
+                bytes: estimated_db_bytes,
+                formatted: format_bytes(estimated_db_bytes),
             }),
             tables,
             views: vec![], // 稍后实现
             procedures: vec![], // 稍后实现
             functions: vec![], // 稍后实现
-            redis_keys: None,
-            mongodb_collections: None,
+            redis_keys,
+            mongodb_collections,
         });
     }
     
@@ -599,11 +714,11 @@ pub async fn get_database_structure(
         db_type,
         databases: database_nodes,
         connection_info: ConnectionInfo {
-            host: "localhost".to_string(), // 从配置获取
-            port: 3306, // 从配置获取
-            username: Some("root".to_string()), // 从配置获取
-            database_name: None,
-            server_version: Some("8.0.30".to_string()), // 查询获取
+            host: config.host.clone(),
+            port: config.port,
+            username: config.username.clone(),
+            database_name: config.database.clone(),
+            server_version: None, // 稍后实现获取服务器版本
         },
     })
 }
@@ -652,7 +767,7 @@ pub async fn get_redis_structure(
 #[tauri::command]
 pub async fn get_mongodb_structure(
     connection_id: String,
-    database_name: String,
+    _database_name: String,
     state: State<'_, AppState>,
 ) -> Result<MongoCollectionInfo, String> {
     let connections = state.connections.lock().await;
