@@ -162,9 +162,9 @@ const getIconClass = (suggestion) => {
     'icon-boolean': 'fas fa-toggle-on',
     'icon-json': 'fas fa-code',
     'icon-keyword': 'fas fa-code',
-    'icon-function': 'fas fa-function',
-    'icon-clause': 'fas fa-paragraph',
-    'icon-operator': 'fas fa-equals',
+    'icon-function': 'fas fa-code',
+    'icon-clause': 'fas fa-align-left',
+    'icon-operator': 'fas fa-plus',
     'icon-statement': 'fas fa-play'
   }
   

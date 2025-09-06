@@ -11,7 +11,7 @@
           <span>过期键: {{ redisKeys.expires_count }}</span>
         </div>
         <div v-if="redisKeys.memory_usage" class="summary-item">
-          <i class="fas fa-memory"></i>
+          <i class="fas fa-microchip"></i>
           <span>内存: {{ formatBytes(redisKeys.memory_usage) }}</span>
         </div>
       </div>
@@ -81,9 +81,9 @@ function getKeyTypeIcon(dataType) {
     'String': 'fas fa-font',
     'Hash': 'fas fa-hashtag',
     'List': 'fas fa-list',
-    'Set': 'fas fa-circle-nodes',
-    'ZSet': 'fas fa-sort-numeric-down',
-    'Stream': 'fas fa-stream'
+    'Set': 'fas fa-circle',
+    'ZSet': 'fas fa-sort-numeric-down-alt',
+    'Stream': 'fas fa-flow'
   }
   return iconMap[dataType] || 'fas fa-key'
 }

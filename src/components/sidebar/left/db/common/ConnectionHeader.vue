@@ -44,7 +44,7 @@ function handleToggle() {
 function getDbTypeIcon(dbType) {
   const iconMap = {
     MySQL: 'fas fa-database',
-    PostgreSQL: 'fas fa-elephant', 
+    PostgreSQL: 'fas fa-database', 
     Redis: 'fas fa-cube',
     MongoDB: 'fas fa-leaf',
     SQLite: 'fas fa-database'

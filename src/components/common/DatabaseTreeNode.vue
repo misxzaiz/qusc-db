@@ -75,7 +75,7 @@ const typeIcon = computed(() => {
     'table': 'fas fa-table',
     'view': 'fas fa-eye',
     'procedure': 'fas fa-cogs',
-    'function': 'fas fa-function',
+    'function': 'fas fa-code',
     'key': 'fas fa-key',
     'collection': 'fas fa-layer-group',
     'index': 'fas fa-sort',

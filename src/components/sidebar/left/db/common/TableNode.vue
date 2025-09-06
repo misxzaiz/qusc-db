@@ -54,7 +54,7 @@ const tableIcon = computed(() => {
     'table': 'fas fa-table',
     'view': 'fas fa-eye', 
     'procedure': 'fas fa-cogs',
-    'function': 'fas fa-function'
+    'function': 'fas fa-code'
   }
   return iconMap[props.tableType] || 'fas fa-table'
 })
