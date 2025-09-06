@@ -178,112 +178,246 @@ function handleNodeContextMenu(nodeData) {
 </script>
 
 <style scoped>
+/* 🗃️ 数据库节点 - 第二层样式 */
 .database-node {
-  margin-bottom: 2px;
+  margin-bottom: var(--tree-spacing-xs, 2px);
+  position: relative;
 }
 
 .database-header {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
+  padding: var(--tree-spacing-sm, 4px) var(--tree-spacing-lg, 12px);
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: 6px;
+  transition: all var(--tree-transition-normal, 0.2s ease);
   user-select: none;
+  position: relative;
+  background: var(--tree-bg-primary, #ffffff);
 }
 
+/* 🎯 数据库节点悬停效果 */
 .database-header:hover {
-  background-color: #f0f0f0;
+  background: linear-gradient(135deg, 
+    var(--tree-primary-ultra-light, rgba(74, 144, 226, 0.05)) 0%, 
+    rgba(74, 144, 226, 0.08) 100%);
+  transform: translateX(2px);
+  box-shadow: var(--tree-shadow-light, 0 1px 3px rgba(0, 0, 0, 0.04));
 }
 
+/* 🎨 选中状态样式 */
 .database-node.selected .database-header {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background: var(--tree-selected-bg, rgba(74, 144, 226, 0.15));
+  color: var(--tree-selected-text, #1976d2);
+  border-left: 3px solid var(--tree-selected-border, #4a90e2);
+  padding-left: var(--tree-spacing-md, 8px);
+  box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.2);
 }
 
+.database-node.selected .database-header:hover {
+  background: var(--tree-selected-bg, rgba(74, 144, 226, 0.15));
+  transform: none;
+}
+
+/* ▶️ 数据库展开图标 */
 .expand-icon {
-  font-size: 9px;
-  margin-right: 6px;
-  color: #666;
-  transition: transform 0.2s ease;
-  width: 10px;
+  font-size: var(--tree-font-xxs, 10px);
+  margin-right: var(--tree-spacing-sm, 4px);
+  color: var(--tree-text-secondary, #666666);
+  transition: all var(--tree-transition-normal, 0.2s ease);
+  width: 12px;
+  text-align: center;
+  transform-origin: center;
 }
 
 .expand-icon.expanded {
   transform: rotate(90deg);
+  color: var(--tree-primary, #4a90e2);
 }
 
+.database-header:hover .expand-icon {
+  color: var(--tree-primary, #4a90e2);
+  transform: scale(1.1);
+}
+
+.database-header:hover .expand-icon.expanded {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* 🗄️ 数据库图标 */
 .database-icon {
-  font-size: 12px;
-  margin-right: 6px;
-  color: #4a90e2;
+  font-size: var(--tree-font-sm, 12px);
+  margin-right: var(--tree-spacing-sm, 4px);
+  color: var(--tree-primary, #4a90e2);
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
+.database-header:hover .database-icon {
+  color: var(--tree-selected-text, #1976d2);
+  transform: scale(1.05);
+}
+
+.database-node.selected .database-icon {
+  color: var(--tree-selected-text, #1976d2);
+}
+
+/* 📝 数据库名称 */
 .database-name {
   flex: 1;
   font-weight: 500;
-  font-size: 13px;
+  font-size: var(--tree-font-md, 13px);
+  color: var(--tree-text-primary, #333333);
+  transition: color var(--tree-transition-normal, 0.2s ease);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+.database-header:hover .database-name {
+  color: var(--tree-selected-text, #1976d2);
+}
+
+.database-node.selected .database-name {
+  color: var(--tree-selected-text, #1976d2);
+  font-weight: 600;
+}
+
+/* 📊 数据库信息标签 */
 .database-info {
-  font-size: 11px;
-  color: #666;
-  margin-right: 8px;
-  background: #f5f5f5;
-  padding: 1px 6px;
-  border-radius: 8px;
+  font-size: var(--tree-font-xs, 11px);
+  color: var(--tree-text-secondary, #666666);
+  margin-right: var(--tree-spacing-md, 8px);
+  background: var(--tree-bg-secondary, #f5f5f5);
+  padding: 2px var(--tree-spacing-sm, 4px);
+  border-radius: 10px;
+  transition: all var(--tree-transition-normal, 0.2s ease);
+  border: 1px solid transparent;
 }
 
-.database-size {
-  font-size: 10px;
-  color: #888;
+.database-header:hover .database-info {
+  background: var(--tree-primary-ultra-light, rgba(74, 144, 226, 0.05));
+  border-color: var(--tree-primary, #4a90e2);
+  color: var(--tree-selected-text, #1976d2);
+  transform: scale(1.05);
 }
 
+.database-node.selected .database-info {
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--tree-selected-text, #1976d2);
+  border-color: var(--tree-selected-text, #1976d2);
+}
+
+/* 📦 数据库内容区域 */
 .database-content {
-  margin-left: 16px;
-  padding-left: 8px;
-  border-left: 1px solid #e8e8e8;
+  margin-left: var(--tree-indent-database, 16px);
+  padding-left: var(--tree-spacing-md, 8px);
+  border-left: 2px solid var(--tree-line-color, #e8e8e8);
+  position: relative;
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
+/* 🎭 数据库层连接线 */
+.database-content::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0;
+  width: 8px;
+  height: 2px;
+  background: var(--tree-line-color, #e8e8e8);
+  transition: background-color var(--tree-transition-normal, 0.2s ease);
+}
+
+.database-node.selected .database-content {
+  border-left-color: var(--tree-selected-border, #4a90e2);
+}
+
+.database-node.selected .database-content::before {
+  background: var(--tree-selected-border, #4a90e2);
+}
+
+/* ⏳ 加载和错误状态 */
 .loading-state,
 .error-state {
   display: flex;
   align-items: center;
-  padding: 6px 12px;
-  font-size: 11px;
-  color: #666;
+  padding: var(--tree-spacing-sm, 4px) var(--tree-spacing-lg, 12px);
+  font-size: var(--tree-font-xs, 11px);
+  color: var(--tree-text-secondary, #666666);
+  border-radius: 4px;
+  margin-bottom: var(--tree-spacing-xs, 2px);
+}
+
+.loading-state {
+  background: var(--tree-primary-ultra-light, rgba(74, 144, 226, 0.05));
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .loading-state i {
-  margin-right: 6px;
-  color: #1976d2;
+  margin-right: var(--tree-spacing-sm, 4px);
+  color: var(--tree-primary, #4a90e2);
+  animation: spin 1s linear infinite;
 }
 
 .error-state {
-  color: #d32f2f;
+  background: rgba(244, 67, 54, 0.05);
+  color: var(--status-danger, #f44336);
+  border: 1px solid rgba(244, 67, 54, 0.15);
 }
 
 .error-state i {
-  margin-right: 6px;
+  margin-right: var(--tree-spacing-sm, 4px);
+  color: var(--status-danger, #f44336);
 }
 
 .retry-btn {
-  margin-left: 6px;
-  padding: 2px 6px;
-  border: 1px solid #d32f2f;
+  margin-left: var(--tree-spacing-sm, 4px);
+  padding: var(--tree-spacing-xs, 2px) var(--tree-spacing-sm, 4px);
+  border: 1px solid var(--status-danger, #f44336);
   background: transparent;
-  color: #d32f2f;
-  border-radius: 2px;
+  color: var(--status-danger, #f44336);
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 10px;
+  font-size: var(--tree-font-xxs, 10px);
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
 .retry-btn:hover {
-  background-color: #d32f2f;
-  color: white;
+  background-color: var(--status-danger, #f44336);
+  color: var(--tree-bg-primary, #ffffff);
+  box-shadow: var(--tree-shadow-light, 0 1px 3px rgba(0, 0, 0, 0.04));
+  transform: translateY(-1px);
 }
 
+/* 📁 表容器 */
 .tables-container {
-  padding: 2px 0;
+  padding: var(--tree-spacing-xs, 2px) 0;
+}
+
+/* ✨ 动画定义 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* 💫 微妙的进入动画 */
+.database-node {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

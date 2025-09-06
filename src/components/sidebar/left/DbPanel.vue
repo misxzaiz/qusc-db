@@ -426,75 +426,151 @@ async function handleCleanupConnections() {
 
 <style scoped>
 .db-panel {
+  /* ===== 树结构设计系统变量 ===== */
+  /* 🌳 层级缩进系统 */
+  --tree-indent-base: 16px;
+  --tree-indent-connection: 20px;
+  --tree-indent-database: 16px;
+  --tree-indent-folder: 12px;
+  --tree-indent-table: 8px;
+  
+  /* 🎨 颜色系统 */
+  --tree-bg-primary: #ffffff;
+  --tree-bg-secondary: #fafafa;
+  --tree-border-light: #e8e8e8;
+  --tree-border-medium: #e0e0e0;
+  --tree-text-primary: #333333;
+  --tree-text-secondary: #666666;
+  --tree-text-muted: #999999;
+  
+  /* 🔵 主题色系 */
+  --tree-primary: #4a90e2;
+  --tree-primary-light: rgba(74, 144, 226, 0.1);
+  --tree-primary-ultra-light: rgba(74, 144, 226, 0.05);
+  
+  /* 🎯 交互状态颜色 */
+  --tree-hover-bg: rgba(74, 144, 226, 0.08);
+  --tree-selected-bg: rgba(74, 144, 226, 0.15);
+  --tree-selected-border: #4a90e2;
+  --tree-selected-text: #1976d2;
+  --tree-active-bg: rgba(74, 144, 226, 0.12);
+  
+  /* 📊 数据库类型颜色 */
+  --db-mysql: #00758f;
+  --db-postgresql: #336791;
+  --db-redis: #d82c20;
+  --db-mongodb: #47a248;
+  
+  /* 🟢 状态指示色 */
+  --status-success: #4caf50;
+  --status-warning: #ff9800;
+  --status-danger: #f44336;
+  --status-muted: #9e9e9e;
+  
+  /* 📐 间距系统 */
+  --tree-spacing-xs: 2px;
+  --tree-spacing-sm: 4px;
+  --tree-spacing-md: 8px;
+  --tree-spacing-lg: 12px;
+  --tree-spacing-xl: 16px;
+  
+  /* ✨ 动画参数 */
+  --tree-transition-fast: 0.1s ease;
+  --tree-transition-normal: 0.2s ease;
+  --tree-transition-slow: 0.3s ease;
+  
+  /* 🔤 字体系统 */
+  --tree-font-lg: 14px;
+  --tree-font-md: 13px;
+  --tree-font-sm: 12px;
+  --tree-font-xs: 11px;
+  --tree-font-xxs: 10px;
+  
+  /* 🎪 阴影系统 */
+  --tree-shadow-light: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --tree-shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --tree-shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.08);
+  
+  /* 🎭 连接线系统 */
+  --tree-line-color: var(--tree-border-light);
+  --tree-line-width: 1px;
+  --tree-line-style: solid;
+  --tree-line-hover: var(--tree-primary);
+  
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: white;
-  border-right: 1px solid #e0e0e0;
+  background: var(--tree-bg-primary);
+  border-right: 1px solid var(--tree-border-medium);
 }
 
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #fafafa;
+  padding: var(--tree-spacing-lg) var(--tree-spacing-xl);
+  border-bottom: var(--tree-line-width) solid var(--tree-border-medium);
+  background: var(--tree-bg-secondary);
 }
 
 .panel-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--tree-font-lg);
   font-weight: 600;
-  color: #333;
+  color: var(--tree-text-primary);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tree-spacing-md);
 }
 
 .panel-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--tree-spacing-sm);
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border: 1px solid #d0d0d0;
-  background: white;
+  gap: var(--tree-spacing-sm);
+  padding: var(--tree-spacing-sm) var(--tree-spacing-md);
+  border: var(--tree-line-width) solid var(--tree-border-medium);
+  background: var(--tree-bg-primary);
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 12px;
-  color: #333;
+  transition: all var(--tree-transition-normal);
+  font-size: var(--tree-font-sm);
+  color: var(--tree-text-primary);
 }
 
 .action-btn:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #b0b0b0;
+  background: var(--tree-hover-bg);
+  border-color: var(--tree-primary);
+  box-shadow: var(--tree-shadow-light);
+  transform: translateY(-1px);
 }
 
 .action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .action-btn.primary {
-  background: #4a90e2;
-  color: white;
-  border-color: #4a90e2;
+  background: var(--tree-primary);
+  color: var(--tree-bg-primary);
+  border-color: var(--tree-primary);
+  box-shadow: var(--tree-shadow-light);
 }
 
 .action-btn.primary:hover:not(:disabled) {
-  background: #357abd;
-  border-color: #357abd;
+  background: var(--tree-selected-text);
+  border-color: var(--tree-selected-text);
+  box-shadow: var(--tree-shadow-medium);
 }
 
 .action-btn i {
-  font-size: 11px;
+  font-size: var(--tree-font-xs);
 }
 
 /* 下拉菜单 */
@@ -563,11 +639,11 @@ async function handleCleanupConnections() {
 .panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: var(--tree-spacing-md);
 }
 
 .connection-item {
-  margin-bottom: 4px;
+  margin-bottom: var(--tree-spacing-sm);
 }
 
 .empty-state,
@@ -577,51 +653,67 @@ async function handleCleanupConnections() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 32px var(--tree-spacing-xl);
   text-align: center;
-  color: #666;
+  color: var(--tree-text-secondary);
 }
 
 .empty-state i,
 .loading-state i,
 .error-state i {
   font-size: 32px;
-  margin-bottom: 12px;
-  color: #bbb;
+  margin-bottom: var(--tree-spacing-lg);
+  color: var(--tree-text-muted);
 }
 
 .loading-state i {
-  color: #4a90e2;
+  color: var(--tree-primary);
+  animation: spin 1s linear infinite;
 }
 
 .error-state i {
-  color: #f44336;
+  color: var(--status-danger);
 }
 
 .empty-state p,
 .loading-state p,
 .error-state p {
-  margin: 0 0 4px 0;
-  font-size: 14px;
+  margin: 0 0 var(--tree-spacing-sm) 0;
+  font-size: var(--tree-font-lg);
 }
 
 .empty-state small {
-  font-size: 12px;
-  color: #999;
+  font-size: var(--tree-font-sm);
+  color: var(--tree-text-muted);
 }
 
 .retry-btn {
-  margin-top: 12px;
-  padding: 6px 16px;
-  background: #4a90e2;
-  color: white;
+  margin-top: var(--tree-spacing-lg);
+  padding: var(--tree-spacing-sm) var(--tree-spacing-xl);
+  background: var(--tree-primary);
+  color: var(--tree-bg-primary);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--tree-font-sm);
+  transition: all var(--tree-transition-normal);
+  box-shadow: var(--tree-shadow-light);
 }
 
 .retry-btn:hover {
-  background: #357abd;
+  background: var(--tree-selected-text);
+  box-shadow: var(--tree-shadow-medium);
+  transform: translateY(-1px);
+}
+
+/* ✨ 动画效果 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 </style>

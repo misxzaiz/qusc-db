@@ -301,146 +301,258 @@ watch(() => props.connection.expanded, (newValue) => {
 </script>
 
 <style scoped>
+/* 🌳 连接节点 - 顶层样式 */
 .connection-node {
-  margin-bottom: 4px;
+  /* 继承父级变量，设置连接层特有样式 */
+  margin-bottom: var(--tree-spacing-sm, 4px);
+  position: relative;
+}
+
+.connection-node.expanded {
+  margin-bottom: var(--tree-spacing-md, 8px);
 }
 
 .connection-header {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: var(--tree-spacing-lg, 12px) var(--tree-spacing-lg, 12px);
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  transition: all var(--tree-transition-normal, 0.2s ease);
   user-select: none;
+  position: relative;
+  background: var(--tree-bg-primary, #ffffff);
+  border: 2px solid transparent;
 }
 
+/* 🎯 悬停效果 - 精致的渐变和阴影 */
 .connection-header:hover {
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, 
+    var(--tree-hover-bg, rgba(74, 144, 226, 0.08)) 0%, 
+    var(--tree-primary-ultra-light, rgba(74, 144, 226, 0.05)) 100%);
+  box-shadow: var(--tree-shadow-medium, 0 2px 8px rgba(0, 0, 0, 0.06));
+  transform: translateY(-1px);
+  border-color: var(--tree-primary, #4a90e2);
 }
 
+/* 🎨 展开状态样式 */
+.connection-node.expanded .connection-header {
+  background: var(--tree-active-bg, rgba(74, 144, 226, 0.12));
+  border-color: var(--tree-primary, #4a90e2);
+  box-shadow: var(--tree-shadow-light, 0 1px 3px rgba(0, 0, 0, 0.04));
+}
+
+/* ▶️ 展开图标 - 增强动画效果 */
 .expand-icon {
-  font-size: 10px;
-  margin-right: 8px;
-  color: #666;
-  transition: transform 0.2s ease;
-  width: 12px;
+  font-size: var(--tree-font-xxs, 10px);
+  margin-right: var(--tree-spacing-md, 8px);
+  color: var(--tree-text-secondary, #666666);
+  transition: all var(--tree-transition-normal, 0.2s ease);
+  width: 14px;
+  text-align: center;
+  transform-origin: center;
 }
 
 .expand-icon.expanded {
   transform: rotate(90deg);
+  color: var(--tree-primary, #4a90e2);
 }
 
+.connection-header:hover .expand-icon {
+  color: var(--tree-primary, #4a90e2);
+  transform: scale(1.1);
+}
+
+.connection-header:hover .expand-icon.expanded {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* 🗄️ 数据库类型图标 */
 .db-icon {
-  font-size: 14px;
-  margin-right: 8px;
+  font-size: var(--tree-font-lg, 14px);
+  margin-right: var(--tree-spacing-md, 8px);
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
+.connection-header:hover .db-icon {
+  transform: scale(1.05);
+}
+
+/* 📝 连接名称 */
 .connection-name {
   flex: 1;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: var(--tree-font-lg, 14px);
+  color: var(--tree-text-primary, #333333);
+  transition: color var(--tree-transition-normal, 0.2s ease);
 }
 
+.connection-header:hover .connection-name {
+  color: var(--tree-selected-text, #1976d2);
+}
+
+/* 🔵 状态指示器容器 */
 .connection-status {
-  margin-left: 8px;
+  margin-left: var(--tree-spacing-md, 8px);
+  display: flex;
+  align-items: center;
 }
 
 .status-indicator {
-  font-size: 8px;
+  font-size: var(--tree-font-xxs, 10px);
+  transition: all var(--tree-transition-normal, 0.2s ease);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
+.connection-header:hover .status-indicator {
+  transform: scale(1.2);
+}
+
+/* 📦 连接内容区域 */
 .connection-content {
-  margin-left: 20px;
-  padding-left: 12px;
-  border-left: 1px solid #e0e0e0;
+  margin-left: var(--tree-indent-connection, 20px);
+  padding-left: var(--tree-spacing-lg, 12px);
+  border-left: 2px solid var(--tree-line-color, #e8e8e8);
+  position: relative;
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
+/* 🎭 连接线优化 */
+.connection-content::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 0;
+  width: 10px;
+  height: 2px;
+  background: var(--tree-line-color, #e8e8e8);
+  transition: background-color var(--tree-transition-normal, 0.2s ease);
+}
+
+.connection-node.expanded .connection-content {
+  border-left-color: var(--tree-primary, #4a90e2);
+}
+
+.connection-node.expanded .connection-content::before {
+  background: var(--tree-primary, #4a90e2);
+}
+
+/* ⏳ 加载和错误状态 */
 .loading-state,
 .error-state {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: #666;
+  padding: var(--tree-spacing-md, 8px) var(--tree-spacing-lg, 12px);
+  font-size: var(--tree-font-sm, 12px);
+  color: var(--tree-text-secondary, #666666);
+  border-radius: 6px;
+  margin-bottom: var(--tree-spacing-sm, 4px);
+}
+
+.loading-state {
+  background: var(--tree-primary-ultra-light, rgba(74, 144, 226, 0.05));
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .loading-state i {
-  margin-right: 8px;
-  color: #1976d2;
+  margin-right: var(--tree-spacing-md, 8px);
+  color: var(--tree-primary, #4a90e2);
+  animation: spin 1s linear infinite;
 }
 
 .error-state {
-  color: #d32f2f;
+  background: rgba(244, 67, 54, 0.05);
+  color: var(--status-danger, #f44336);
+  border: 1px solid rgba(244, 67, 54, 0.2);
 }
 
 .error-state i {
-  margin-right: 8px;
+  margin-right: var(--tree-spacing-md, 8px);
+  color: var(--status-danger, #f44336);
 }
 
 .retry-btn {
-  margin-left: 8px;
-  padding: 2px 8px;
-  border: 1px solid #d32f2f;
+  margin-left: var(--tree-spacing-md, 8px);
+  padding: var(--tree-spacing-xs, 2px) var(--tree-spacing-md, 8px);
+  border: 1px solid var(--status-danger, #f44336);
   background: transparent;
-  color: #d32f2f;
-  border-radius: 3px;
+  color: var(--status-danger, #f44336);
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--tree-font-xs, 11px);
+  transition: all var(--tree-transition-normal, 0.2s ease);
 }
 
 .retry-btn:hover {
-  background-color: #d32f2f;
-  color: white;
+  background-color: var(--status-danger, #f44336);
+  color: var(--tree-bg-primary, #ffffff);
+  box-shadow: var(--tree-shadow-light, 0 1px 3px rgba(0, 0, 0, 0.04));
+  transform: translateY(-1px);
 }
 
+/* 📁 数据库容器 */
 .databases-container {
-  padding: 4px 0;
+  padding: var(--tree-spacing-sm, 4px) 0;
 }
 
-/* 数据库类型颜色 */
-.text-mysql { color: #00758f; }
-.text-postgresql { color: #336791; }
-.text-redis { color: #d82c20; }
-.text-mongodb { color: #47a248; }
-.text-success { color: #4caf50; }
-.text-warning { color: #ff9800; }
-.text-danger { color: #f44336; }
-.text-muted { color: #9e9e9e; }
+/* 🎨 数据库类型专属颜色 */
+.text-mysql { color: var(--db-mysql, #00758f); }
+.text-postgresql { color: var(--db-postgresql, #336791); }
+.text-redis { color: var(--db-redis, #d82c20); }
+.text-mongodb { color: var(--db-mongodb, #47a248); }
+.text-success { color: var(--status-success, #4caf50); }
+.text-warning { color: var(--status-warning, #ff9800); }
+.text-danger { color: var(--status-danger, #f44336); }
+.text-muted { color: var(--status-muted, #9e9e9e); }
 
-/* 右键菜单样式 */
+/* 🖱️ 右键菜单样式 */
 .context-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
+  gap: var(--tree-spacing-md, 8px);
+  padding: var(--tree-spacing-md, 8px) var(--tree-spacing-lg, 12px);
+  font-size: var(--tree-font-sm, 12px);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--tree-transition-fast, 0.1s ease);
   user-select: none;
+  border-radius: 4px;
+  margin: 2px;
 }
 
 .context-menu-item:hover {
-  background-color: #f8f8f8;
+  background: var(--tree-hover-bg, rgba(74, 144, 226, 0.08));
+  transform: translateX(2px);
 }
 
 .context-menu-item.danger {
-  color: #d32f2f;
+  color: var(--status-danger, #f44336);
 }
 
 .context-menu-item.danger:hover {
-  background-color: #ffebee;
+  background: rgba(244, 67, 54, 0.1);
+  color: var(--status-danger, #f44336);
 }
 
 .context-menu-item i {
-  width: 12px;
-  font-size: 11px;
+  width: 14px;
+  font-size: var(--tree-font-xs, 11px);
   text-align: center;
 }
 
 .context-menu-divider {
   height: 1px;
-  background: #e8e8e8;
-  margin: 4px 0;
+  background: var(--tree-border-light, #e8e8e8);
+  margin: var(--tree-spacing-sm, 4px) 0;
+}
+
+/* ✨ 动画定义 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 </style>
