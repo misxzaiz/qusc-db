@@ -91,7 +91,8 @@
       "Bash(move \"enhanced_types_test.rs\" \"tests.rs\")",
       "Bash(powershell:*)",
       "Bash(cargo test:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(gh pr:*)"
     ],
     "deny": []
   }

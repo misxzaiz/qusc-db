@@ -8,7 +8,7 @@
       <div class="panel-actions">
         <button 
           class="refresh-btn"
-          @click="refreshData"
+          @click="refreshConnections"
           :disabled="loading"
           title="刷新"
         >
@@ -25,20 +25,36 @@
         <small>请先建立数据库连接</small>
       </div>
 
-      <!-- 数据库结构树 -->
-      <div v-for="structure in databaseStructures" :key="structure.connection_id" class="connection-group">
-        <div class="connection-header">
-          <i :class="getDbTypeIcon(structure.db_type)"></i>
-          <span class="connection-name">{{ getConnectionDisplayName(structure) }}</span>
-          <span class="connection-status" :class="getStatusClass(structure)">●</span>
+      <!-- 数据库连接列表 -->
+      <div v-for="connection in connections" :key="connection.key" class="connection-item">
+        <!-- 连接头部 - 可点击展开 -->
+        <div class="connection-header" @click="toggleConnection(connection)">
+          <i class="fas fa-chevron-right" :class="{ 'expanded': connection.expanded }"></i>
+          <i :class="getDbTypeIcon(connection.config.db_type)"></i>
+          <span class="connection-name">{{ connection.name }}</span>
+          <span class="connection-info">{{ connection.info }}</span>
+          <span class="connection-status" :class="getStatusClass(connection.status)">●</span>
         </div>
-
-        <div class="database-tree">
+        
+        <!-- 展开的结构树 -->
+        <div v-if="connection.expanded" class="connection-children">
+          <div v-if="connection.loading" class="loading-item">
+            <i class="fas fa-spinner fa-spin"></i>
+            正在加载数据库结构...
+          </div>
+          
+          <div v-else-if="connection.error" class="error-item">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ connection.error }}
+            <button @click="loadConnectionStructure(connection)" class="retry-btn-small">重试</button>
+          </div>
+          
           <DatabaseTreeNode
-            v-for="treeNode in buildTreeNodes(structure)"
-            :key="treeNode.key"
-            :node="treeNode"
-            :selected="selectedNode?.key === treeNode.key"
+            v-else
+            v-for="child in connection.children"
+            :key="child.key"
+            :node="child"
+            :selected="selectedNode?.key === child.key"
             @node-click="handleNodeClick"
           />
         </div>
@@ -48,14 +64,14 @@
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i>
-      <p>正在加载数据库结构...</p>
+      <p>正在加载连接配置...</p>
     </div>
 
     <!-- 错误状态 -->
     <div v-if="error && !loading" class="error-state">
       <i class="fas fa-exclamation-triangle"></i>
       <p>{{ error }}</p>
-      <button @click="refreshData" class="retry-btn">重试</button>
+      <button @click="refreshConnections" class="retry-btn">重试</button>
     </div>
   </div>
 </template>
@@ -72,234 +88,190 @@ const connectionStore = useConnectionStore()
 // Reactive data
 const loading = ref(false)
 const error = ref('')
-const databaseStructures = ref([])
 const selectedNode = ref(null)
 
-// Computed
-const connections = computed(() => connectionStore.activeConnections)
-
-// 监听连接变化
-watch(() => connectionStore.activeConnections, async (newConnections) => {
-  if (newConnections.length > 0) {
-    await loadDatabaseStructures()
-  } else {
-    databaseStructures.value = []
-  }
-}, { deep: true })
+// 简化的响应式数据
+const connections = ref([])
+const loadingConnections = ref({})
 
 // 生命周期
 onMounted(async () => {
-  await loadDatabaseStructures()
+  await loadSavedConnections()
 })
 
 /**
- * 加载数据库结构
+ * 加载已保存的连接配置
  */
-async function loadDatabaseStructures() {
-  if (connectionStore.activeConnections.length === 0) {
-    databaseStructures.value = []
-    return
-  }
-
+async function loadSavedConnections() {
   loading.value = true
   error.value = ''
   
   try {
-    const structures = []
+    const savedConfigs = await connectionStore.loadConnectionConfigs()
     
-    for (const connection of connectionStore.activeConnections) {
-      try {
-        const structure = await DatabaseService.getDatabaseStructure(connection.id)
-        structures.push(structure)
-      } catch (err) {
-        console.error(`Failed to load structure for connection ${connection.id}:`, err)
-        // 继续加载其他连接，不让一个失败影响全部
-      }
-    }
+    // 转换为连接节点格式
+    const connectionNodes = Object.entries(savedConfigs).map(([name, config]) => ({
+      key: `connection-${name}`,
+      name: name,
+      type: 'connection',
+      config: config,
+      status: getConnectionStatus(name),
+      info: `${config.host}:${config.port}`,
+      children: [],
+      expanded: false,
+      loading: false,
+      error: ''
+    }))
     
-    databaseStructures.value = structures
+    connections.value = connectionNodes
   } catch (err) {
-    error.value = err.message || '加载数据库结构失败'
-    console.error('Error loading database structures:', err)
+    error.value = err.message || '加载连接配置失败'
+    console.error('Error loading saved connections:', err)
   } finally {
     loading.value = false
   }
 }
 
 /**
- * 刷新数据
+ * 刷新连接列表
  */
-async function refreshData() {
-  await loadDatabaseStructures()
+async function refreshConnections() {
+  await loadSavedConnections()
 }
 
 /**
- * 构建树节点数据
+ * 获取连接状态
  */
-function buildTreeNodes(structure) {
-  const nodes = []
-  
-  // 为每个数据库创建节点
-  for (const database of structure.databases) {
-    const dbNode = {
-      key: `${structure.connection_id}-${database.name}`,
-      name: database.name,
-      type: 'database',
-      info: database.size_info?.formatted,
-      children: buildDatabaseChildren(structure, database)
-    }
-    nodes.push(dbNode)
+function getConnectionStatus(connectionName) {
+  // 首先检查是否有保存的连接ID
+  const savedConnection = connections.value.find(conn => conn.name === connectionName)
+  if (savedConnection && savedConnection.connectionId) {
+    // 检查是否在活动连接中
+    const isActive = connectionStore.activeConnections.find(
+      conn => conn.id === savedConnection.connectionId
+    )
+    return isActive ? 'connected' : 'disconnected'
   }
   
-  return nodes
+  // 如果没有连接ID，检查传统方式
+  const isActive = connectionStore.activeConnections.find(
+    conn => conn.name === connectionName
+  )
+  
+  return isActive ? 'connected' : 'disconnected'
 }
 
 /**
- * 构建数据库子节点
+ * 切换连接展开状态
  */
-function buildDatabaseChildren(structure, database) {
+async function toggleConnection(connection) {
+  if (connection.loading) return
+  
+  connection.expanded = !connection.expanded
+  
+  if (connection.expanded && connection.children.length === 0) {
+    await loadConnectionStructure(connection)
+  }
+}
+
+/**
+ * 动态加载连接结构
+ */
+async function loadConnectionStructure(connection) {
+  connection.loading = true
+  connection.error = ''
+  
+  try {
+    // 1. 先建立连接，获取连接ID
+    const connectionId = await connectionStore.connectToDatabase(connection.config)
+    
+    if (!connectionId) {
+      throw new Error('连接建立失败，未获得连接ID')
+    }
+    
+    // 保存连接ID到连接对象中
+    connection.connectionId = connectionId
+    // 更新连接状态
+    connection.status = 'connected'
+    
+    // 2. 使用连接ID获取数据库结构
+    const structure = await DatabaseService.getDatabaseStructure(connectionId)
+    
+    // 3. 转换为简单的树节点
+    connection.children = buildSimpleChildren(structure, connection)
+  } catch (err) {
+    connection.error = err.message || '加载数据库结构失败'
+    connection.status = 'error'
+    console.error('Error loading connection structure:', err)
+  } finally {
+    connection.loading = false
+  }
+}
+
+/**
+ * 构建简化的子节点
+ */
+function buildSimpleChildren(structure, parentConnection) {
   const children = []
   
-  // MySQL/PostgreSQL 结构
-  if (['MySQL', 'PostgreSQL'].includes(structure.db_type)) {
-    // 表文件夹
-    if (database.tables.length > 0) {
+  if (structure.databases) {
+    // MySQL/PostgreSQL: 按数据库分组
+    structure.databases.forEach(db => {
+      const dbChildren = []
+      
+      // 添加表
+      if (db.tables && db.tables.length > 0) {
+        db.tables.forEach(table => {
+          dbChildren.push({
+            key: `${parentConnection.key}-${db.name}-table-${table.name}`,
+            name: table.name,
+            type: 'table',
+            info: `${DatabaseService.formatCount(table.row_count)} 行`
+          })
+        })
+      }
+      
+      // 添加视图
+      if (db.views && db.views.length > 0) {
+        db.views.forEach(view => {
+          dbChildren.push({
+            key: `${parentConnection.key}-${db.name}-view-${view.name}`,
+            name: view.name,
+            type: 'view',
+            info: '视图'
+          })
+        })
+      }
+      
       children.push({
-        key: `${structure.connection_id}-${database.name}-tables`,
-        name: '表',
-        type: 'folder-tables',
-        info: `${database.tables.length}`,
-        children: database.tables.map(table => ({
-          key: `${structure.connection_id}-${database.name}-table-${table.name}`,
-          name: table.name,
-          type: 'table',
-          info: `${DatabaseService.formatCount(table.row_count)} 行, ${table.size_info?.formatted || '0B'}`,
-          children: []
-        }))
+        key: `${parentConnection.key}-${db.name}`,
+        name: db.name,
+        type: 'database',
+        info: `${db.tables?.length || 0} 表`,
+        children: dbChildren,
+        expanded: false
       })
-    }
-    
-    // 视图文件夹
-    if (database.views.length > 0) {
-      children.push({
-        key: `${structure.connection_id}-${database.name}-views`,
-        name: '视图',
-        type: 'folder-views',
-        info: `${database.views.length}`,
-        children: database.views.map(view => ({
-          key: `${structure.connection_id}-${database.name}-view-${view.name}`,
-          name: view.name,
-          type: 'view',
-          children: []
-        }))
-      })
-    }
-    
-    // 存储过程文件夹
-    if (database.procedures.length > 0) {
-      children.push({
-        key: `${structure.connection_id}-${database.name}-procedures`,
-        name: '存储过程',
-        type: 'folder-procedures',
-        info: `${database.procedures.length}`,
-        children: database.procedures.map(proc => ({
-          key: `${structure.connection_id}-${database.name}-procedure-${proc.name}`,
-          name: proc.name,
-          type: 'procedure',
-          children: []
-        }))
-      })
-    }
-    
-    // 函数文件夹
-    if (database.functions.length > 0) {
-      children.push({
-        key: `${structure.connection_id}-${database.name}-functions`,
-        name: '函数',
-        type: 'folder-functions',
-        info: `${database.functions.length}`,
-        children: database.functions.map(func => ({
-          key: `${structure.connection_id}-${database.name}-function-${func.name}`,
-          name: func.name,
-          type: 'function',
-          info: func.return_type,
-          children: []
-        }))
-      })
-    }
-  }
-  
-  // Redis 结构
-  if (structure.db_type === 'Redis' && database.redis_keys) {
-    const redisInfo = database.redis_keys
-    children.push({
-      key: `${structure.connection_id}-${database.name}-keys`,
-      name: '键',
-      type: 'folder-keys',
-      info: `${DatabaseService.formatCount(redisInfo.key_count)} 个`,
-      children: redisInfo.sample_keys.map(keyNode => ({
-        key: `${structure.connection_id}-${database.name}-key-${keyNode.key}`,
-        name: keyNode.key,
-        type: 'key',
-        info: `${keyNode.data_type}${keyNode.ttl ? ` (TTL: ${keyNode.ttl}s)` : ''}`,
-        children: []
-      }))
     })
-    
-    if (redisInfo.expires_count > 0) {
+  } else if (structure.redis_keys) {
+    // Redis: 显示键样例
+    structure.redis_keys.sample_keys.forEach(keyInfo => {
       children.push({
-        key: `${structure.connection_id}-${database.name}-expiry`,
-        name: '过期键',
-        type: 'folder-keys',
-        info: `${DatabaseService.formatCount(redisInfo.expires_count)} 个`,
-        children: []
+        key: `${parentConnection.key}-key-${keyInfo.key}`,
+        name: keyInfo.key,
+        type: 'redis-key',
+        info: keyInfo.data_type
       })
-    }
-  }
-  
-  // MongoDB 结构
-  if (structure.db_type === 'MongoDB' && database.mongodb_collections) {
-    const mongoInfo = database.mongodb_collections
-    
-    // 集合文件夹
-    if (mongoInfo.collections.length > 0) {
+    })
+  } else if (structure.mongodb_collections) {
+    // MongoDB: 显示集合
+    structure.mongodb_collections.collections.forEach(collection => {
       children.push({
-        key: `${structure.connection_id}-${database.name}-collections`,
-        name: '集合',
-        type: 'folder-collections',
-        info: `${mongoInfo.collections.length}`,
-        children: mongoInfo.collections.map(collection => ({
-          key: `${structure.connection_id}-${database.name}-collection-${collection.name}`,
-          name: collection.name,
-          type: 'collection',
-          info: `${DatabaseService.formatCount(collection.document_count)} 文档`,
-          children: collection.indexes.map(index => ({
-            key: `${structure.connection_id}-${database.name}-collection-${collection.name}-index-${index.name}`,
-            name: index.name,
-            type: 'index',
-            info: index.unique ? '唯一' : '普通',
-            children: []
-          }))
-        }))
+        key: `${parentConnection.key}-collection-${collection.name}`,
+        name: collection.name,
+        type: 'collection',
+        info: `${DatabaseService.formatCount(collection.document_count)} 文档`
       })
-    }
-    
-    // GridFS文件夹
-    if (mongoInfo.gridfs_buckets.length > 0) {
-      children.push({
-        key: `${structure.connection_id}-${database.name}-gridfs`,
-        name: 'GridFS',
-        type: 'folder-gridfs',
-        info: `${mongoInfo.gridfs_buckets.length}`,
-        children: mongoInfo.gridfs_buckets.map(bucket => ({
-          key: `${structure.connection_id}-${database.name}-gridfs-${bucket.name}`,
-          name: bucket.name,
-          type: 'collection',
-          info: `${DatabaseService.formatCount(bucket.file_count)} 文件`,
-          children: []
-        }))
-      })
-    }
+    })
   }
   
   return children
@@ -320,19 +292,16 @@ function getDbTypeIcon(dbType) {
 }
 
 /**
- * 获取连接显示名称
- */
-function getConnectionDisplayName(structure) {
-  const conn = structure.connection_info
-  return `${conn.host}:${conn.port}${conn.database_name ? `/${conn.database_name}` : ''}`
-}
-
-/**
  * 获取连接状态样式
  */
-function getStatusClass(structure) {
-  // 简化实现，后续可以根据实际连接状态调整
-  return 'status-connected'
+function getStatusClass(status) {
+  const statusMap = {
+    'connected': 'status-connected',
+    'disconnected': 'status-disconnected',
+    'connecting': 'status-connecting',
+    'error': 'status-error'
+  }
+  return statusMap[status] || 'status-disconnected'
 }
 
 /**
@@ -340,12 +309,7 @@ function getStatusClass(structure) {
  */
 function handleNodeClick(node) {
   selectedNode.value = node
-  
-  // 可以在这里触发其他事件，比如显示表数据、键详情等
   console.log('Selected node:', node)
-  
-  // 触发自定义事件给父组件
-  // emit('node-selected', node)
 }
 </script>
 
@@ -411,6 +375,10 @@ function handleNodeClick(node) {
   margin-bottom: 16px;
 }
 
+.connection-item {
+  margin-bottom: 8px;
+}
+
 .connection-header {
   display: flex;
   align-items: center;
@@ -418,9 +386,77 @@ function handleNodeClick(node) {
   padding: 8px 12px;
   background: #f8f9fa;
   border-radius: 6px;
-  margin-bottom: 8px;
   font-weight: 500;
   font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.connection-header:hover {
+  background: #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.connection-header i:first-child {
+  transition: transform 0.2s ease;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.connection-header i:first-child.expanded {
+  transform: rotate(90deg);
+}
+
+.connection-children {
+  margin-left: 20px;
+  margin-top: 8px;
+  border-left: 2px solid #dee2e6;
+  padding-left: 12px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading-item,
+.error-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #6c757d;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.error-item {
+  color: #dc3545;
+  background: #f8d7da;
+}
+
+.retry-btn-small {
+  margin-left: auto;
+  padding: 2px 6px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.retry-btn-small:hover {
+  background: #0056b3;
 }
 
 .connection-name {
@@ -428,24 +464,29 @@ function handleNodeClick(node) {
   color: #333;
 }
 
+.connection-info {
+  font-size: 11px;
+  color: #6c757d;
+}
+
 .connection-status {
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .status-connected {
-  color: #4caf50;
+  color: #28a745;
 }
 
 .status-disconnected {
-  color: #f44336;
+  color: #dc3545;
 }
 
 .status-connecting {
-  color: #ff9800;
+  color: #ffc107;
 }
 
-.database-tree {
-  margin-left: 8px;
+.status-error {
+  color: #dc3545;
 }
 
 .empty-state,

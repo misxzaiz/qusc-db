@@ -5,8 +5,8 @@
   "identifier": "com.qusc.db",
   "build": {
     "beforeBuildCommand": "npm run build",
-    "beforeDevCommand": "",
-    "devUrl": "http://localhost:5178",
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
   "app": {
