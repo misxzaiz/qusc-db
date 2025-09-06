@@ -27,14 +27,11 @@
 
       <!-- 数据库连接列表 -->
       <div v-for="connection in connections" :key="connection.key" class="connection-item">
-        <!-- 连接头部 - 可点击展开 -->
-        <div class="connection-header" @click="toggleConnection(connection)">
-          <i class="fas fa-chevron-right" :class="{ 'expanded': connection.expanded }"></i>
-          <i :class="getDbTypeIcon(connection.config.db_type)"></i>
-          <span class="connection-name">{{ connection.name }}</span>
-          <span class="connection-info">{{ connection.info }}</span>
-          <span class="connection-status" :class="getStatusClass(connection.status)">●</span>
-        </div>
+        <!-- 连接头部 - 使用新组件 -->
+        <ConnectionHeader 
+          :connection="connection"
+          @toggle="toggleConnection"
+        />
         
         <!-- 展开的结构树 -->
         <div v-if="connection.expanded" class="connection-children">
@@ -79,6 +76,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
+import ConnectionHeader from './db/common/ConnectionHeader.vue'
 import DatabaseTreeNode from '@/components/common/DatabaseTreeNode.vue'
 import DatabaseService from '@/services/databaseService'
 
@@ -278,33 +276,6 @@ function buildSimpleChildren(structure, parentConnection) {
 }
 
 /**
- * 获取数据库类型图标
- */
-function getDbTypeIcon(dbType) {
-  const iconMap = {
-    MySQL: 'fas fa-database',
-    PostgreSQL: 'fas fa-elephant',
-    Redis: 'fas fa-cube',
-    MongoDB: 'fas fa-leaf',
-    SQLite: 'fas fa-database'
-  }
-  return iconMap[dbType] || 'fas fa-database'
-}
-
-/**
- * 获取连接状态样式
- */
-function getStatusClass(status) {
-  const statusMap = {
-    'connected': 'status-connected',
-    'disconnected': 'status-disconnected',
-    'connecting': 'status-connecting',
-    'error': 'status-error'
-  }
-  return statusMap[status] || 'status-disconnected'
-}
-
-/**
  * 处理节点点击事件
  */
 function handleNodeClick(node) {
@@ -379,35 +350,6 @@ function handleNodeClick(node) {
   margin-bottom: 8px;
 }
 
-.connection-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.connection-header:hover {
-  background: #e9ecef;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.connection-header i:first-child {
-  transition: transform 0.2s ease;
-  color: #6c757d;
-  font-size: 12px;
-}
-
-.connection-header i:first-child.expanded {
-  transform: rotate(90deg);
-}
-
 .connection-children {
   margin-left: 20px;
   margin-top: 8px;
@@ -459,35 +401,6 @@ function handleNodeClick(node) {
   background: #0056b3;
 }
 
-.connection-name {
-  flex: 1;
-  color: #333;
-}
-
-.connection-info {
-  font-size: 11px;
-  color: #6c757d;
-}
-
-.connection-status {
-  font-size: 10px;
-}
-
-.status-connected {
-  color: #28a745;
-}
-
-.status-disconnected {
-  color: #dc3545;
-}
-
-.status-connecting {
-  color: #ffc107;
-}
-
-.status-error {
-  color: #dc3545;
-}
 
 .empty-state,
 .loading-state,
