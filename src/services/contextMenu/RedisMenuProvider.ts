@@ -201,7 +201,6 @@ export class RedisMenuProvider extends MenuProvider {
   }
   
   async executeAction(actionId: string, context: MenuContext): Promise<OperationResult> {
-    // 这里先返回模拟结果，后续实现具体逻辑
     try {
       switch (actionId) {
         case RedisAction.VIEW_KEY:
@@ -221,6 +220,48 @@ export class RedisMenuProvider extends MenuProvider {
         
         case RedisAction.COPY_KEY_NAME:
           return this.copyKeyName(context)
+          
+        case RedisAction.CREATE_KEY:
+          return this.createKey(context)
+        
+        case RedisAction.SEARCH_KEYS:
+          return this.searchKeys(context)
+        
+        case RedisAction.FLUSH_DATABASE:
+          return this.flushDatabase(context)
+          
+        // Hash 操作
+        case RedisAction.HASH_VIEW_FIELDS:
+          return this.hashViewFields(context)
+        
+        case RedisAction.HASH_ADD_FIELD:
+          return this.hashAddField(context)
+        
+        // List 操作
+        case RedisAction.LIST_VIEW_ELEMENTS:
+          return this.listViewElements(context)
+        
+        case RedisAction.LIST_PUSH_LEFT:
+        case RedisAction.LIST_PUSH_RIGHT:
+          return this.listPushElement(context, actionId)
+        
+        // Set 操作
+        case RedisAction.SET_VIEW_MEMBERS:
+          return this.setViewMembers(context)
+        
+        case RedisAction.SET_ADD_MEMBER:
+          return this.setAddMember(context)
+        
+        // String 操作
+        case RedisAction.STRING_APPEND:
+          return this.stringAppend(context)
+        
+        // TTL 操作
+        case RedisAction.SET_EXPIRE:
+          return this.setExpire(context)
+        
+        case RedisAction.REMOVE_EXPIRE:
+          return this.removeExpire(context)
         
         default:
           return {
@@ -330,5 +371,140 @@ export class RedisMenuProvider extends MenuProvider {
         message: '复制失败，请手动复制'
       }
     }
+  }
+  
+  // ===== 新增操作方法 =====
+  
+  private async createKey(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('set', context, {
+      title: '创建新键',
+      description: '创建一个新的Redis键',
+      isNewKey: true
+    })
+    return { success: true, message: '打开创建键对话框' }
+  }
+  
+  private async searchKeys(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('keys', context, {
+      title: '搜索键',
+      description: '使用模式匹配搜索键'
+    })
+    return { success: true, message: '打开搜索键对话框' }
+  }
+  
+  private async flushDatabase(context: MenuContext): Promise<OperationResult> {
+    window.dispatchEvent(new CustomEvent('redis-flush-database', {
+      detail: {
+        connectionId: context.connectionId,
+        databaseName: context.databaseName
+      }
+    }))
+    return { 
+      success: true, 
+      message: '清空数据库操作已触发',
+      needsRefresh: true
+    }
+  }
+  
+  // Hash 操作
+  private async hashViewFields(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('hgetall', context, {
+      title: 'Hash - 查看所有字段',
+      description: `查看Hash "${context.nodeName}" 的所有字段`
+    })
+    return { success: true, message: '打开Hash查看对话框' }
+  }
+  
+  private async hashAddField(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('hset', context, {
+      title: 'Hash - 设置字段',
+      description: `为Hash "${context.nodeName}" 设置字段值`
+    })
+    return { success: true, message: '打开Hash设置对话框' }
+  }
+  
+  // List 操作
+  private async listViewElements(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('lrange', context, {
+      title: 'List - 查看元素',
+      description: `查看List "${context.nodeName}" 的所有元素`
+    })
+    return { success: true, message: '打开List查看对话框' }
+  }
+  
+  private async listPushElement(context: MenuContext, actionId: string): Promise<OperationResult> {
+    const isLeft = actionId === RedisAction.LIST_PUSH_LEFT
+    this.showOperationDialog(isLeft ? 'lpush' : 'rpush', context, {
+      title: `List - ${isLeft ? '左侧' : '右侧'}推入`,
+      description: `向List "${context.nodeName}" ${isLeft ? '左侧' : '右侧'}推入元素`
+    })
+    return { success: true, message: `打开List${isLeft ? '左侧' : '右侧'}推入对话框` }
+  }
+  
+  // Set 操作
+  private async setViewMembers(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('smembers', context, {
+      title: 'Set - 查看成员',
+      description: `查看Set "${context.nodeName}" 的所有成员`
+    })
+    return { success: true, message: '打开Set查看对话框' }
+  }
+  
+  private async setAddMember(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('sadd', context, {
+      title: 'Set - 添加成员',
+      description: `向Set "${context.nodeName}" 添加成员`
+    })
+    return { success: true, message: '打开Set添加对话框' }
+  }
+  
+  // String 操作
+  private async stringAppend(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('append', context, {
+      title: 'String - 追加内容',
+      description: `向字符串 "${context.nodeName}" 追加内容`
+    })
+    return { success: true, message: '打开String追加对话框' }
+  }
+  
+  // TTL 操作
+  private async setExpire(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('expire', context, {
+      title: '设置过期时间',
+      description: `为键 "${context.nodeName}" 设置过期时间`
+    })
+    return { success: true, message: '打开设置过期时间对话框' }
+  }
+  
+  private async removeExpire(context: MenuContext): Promise<OperationResult> {
+    window.dispatchEvent(new CustomEvent('redis-execute-command', {
+      detail: {
+        connectionId: context.connectionId,
+        databaseName: context.databaseName,
+        command: `PERSIST ${context.nodeName}`,
+        context: context
+      }
+    }))
+    return { 
+      success: true, 
+      message: `移除键 "${context.nodeName}" 的过期时间`,
+      needsRefresh: true
+    }
+  }
+  
+  // ===== 辅助方法 =====
+  
+  private showOperationDialog(operation: string, context: MenuContext, options: any = {}): void {
+    window.dispatchEvent(new CustomEvent('redis-show-operation-dialog', {
+      detail: {
+        operation,
+        keyName: context.nodeName,
+        dataType: context.nodeData?.dataType || 'String',
+        connectionId: context.connectionId,
+        databaseName: context.databaseName,
+        context: context,
+        options: options
+      }
+    }))
   }
 }

@@ -49,6 +49,35 @@
       @close="showSettings = false"
     />
 
+    <!-- Redis操作对话框 -->
+    <RedisOperationDialog
+      v-if="showRedisDialog"
+      ref="redisDialogRef"
+      :visible="showRedisDialog"
+      :operation="currentRedisOperation"
+      :key-name="redisOperationData.keyName"
+      :data-type="redisOperationData.dataType"
+      :connection-id="redisOperationData.connectionId"
+      :database-name="redisOperationData.databaseName"
+      @confirm="handleRedisDialogConfirm"
+      @cancel="handleRedisDialogCancel"
+      @update:visible="showRedisDialog = $event"
+    />
+    
+    <!-- 确认对话框 -->
+    <ConfirmDialog
+      v-if="showConfirmDialog"
+      ref="confirmDialogRef"
+      :visible="showConfirmDialog"
+      :title="confirmDialogData.title"
+      :message="confirmDialogData.message"
+      :type="confirmDialogData.type"
+      :confirm-text="confirmDialogData.confirmText"
+      @confirm="handleConfirmDialogConfirm"
+      @cancel="handleConfirmDialogCancel"
+      @update:visible="showConfirmDialog = $event"
+    />
+
     <!-- UI主题管理器 -->
     <UIThemeManager 
       :current-db-type="currentConnection?.config?.db_type || 'MySQL'"
@@ -63,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useConnectionStore } from './stores/connection'
 import { useAIStore } from './stores/ai'
 import { useNotificationStore } from './stores/notification'
@@ -71,6 +100,7 @@ import { useThemeStore } from './stores/theme'
 import { useTheme } from './composables/useTheme.js'
 import { useShortcuts, useAppShortcuts } from './composables/useShortcuts.js'
 import { useUserPreferences } from './composables/usePersistence.js'
+import { useRedisOperationManager } from './composables/useRedisOperationManager.ts'
 
 // 组件导入
 import AppToolbar from './components/toolbar/index.vue'
@@ -81,6 +111,8 @@ import NotificationToast from './components/notification/index.vue'
 import DialogSystem from './components/dialog/index.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import UIThemeManager from './components/database-renderers/UIThemeManager.vue'
+import RedisOperationDialog from './components/dialog/RedisOperationDialog.vue'
+import ConfirmDialog from './components/dialog/ConfirmDialog.vue'
 
 // 状态管理
 const connectionStore = useConnectionStore()
@@ -93,6 +125,18 @@ const { toggleTheme, initTheme } = useTheme()
 const { init: initShortcuts } = useShortcuts()
 const { registerCommonShortcuts } = useAppShortcuts()
 const preferences = useUserPreferences()
+
+// Redis操作管理器
+const {
+  showDialog: showRedisDialog,
+  currentOperation: currentRedisOperation,
+  operationData: redisOperationData,
+  dialogRef: redisDialogRef,
+  initEventListeners: initRedisEvents,
+  cleanupEventListeners: cleanupRedisEvents,
+  handleDialogConfirm: handleRedisDialogConfirm,
+  handleDialogCancel: handleRedisDialogCancel
+} = useRedisOperationManager()
 
 // 响应式数据
 const activePanel = ref('')
@@ -273,6 +317,9 @@ onMounted(async () => {
     initTheme()
     themeStore.initTheme()
     
+    // 初始化Redis事件监听器
+    initRedisEvents()
+    
     // 初始化全局快捷键
     initShortcuts()
     
@@ -311,6 +358,48 @@ onMounted(async () => {
     console.warn('AI服务初始化失败:', error)
     aiStatus.value = 'AI未配置'
   }
+})
+
+// 组件卸载时清理
+onBeforeUnmount(() => {
+  cleanupRedisEvents()
+})
+
+// 确认对话框状态
+const showConfirmDialog = ref(false)
+const confirmDialogData = ref({})
+const confirmDialogRef = ref(null)
+const confirmDialogResolver = ref(null)
+
+// 确认对话框处理函数
+function handleConfirmDialogConfirm() {
+  if (confirmDialogResolver.value) {
+    confirmDialogResolver.value(true)
+  }
+  showConfirmDialog.value = false
+  confirmDialogData.value = {}
+}
+
+function handleConfirmDialogCancel() {
+  if (confirmDialogResolver.value) {
+    confirmDialogResolver.value(false)
+  }
+  showConfirmDialog.value = false
+  confirmDialogData.value = {}
+}
+
+// 全局确认对话框事件监听
+window.addEventListener('show-confirm-dialog', (event) => {
+  const { title, message, type, confirmText, resolve } = event.detail
+  
+  confirmDialogData.value = {
+    title: title || '确认',
+    message,
+    type: type || 'info',
+    confirmText
+  }
+  confirmDialogResolver.value = resolve
+  showConfirmDialog.value = true
 })
 </script>
 

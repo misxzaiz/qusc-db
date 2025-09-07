@@ -1,462 +1,246 @@
 <template>
-  <BaseDialog
-    :visible="visible"
-    :title="title"
-    :icon="typeIcon"
-    :size="size"
-    :closable="closable"
-    :mask-closable="maskClosable"
-    :loading="loading"
-    :show-default-footer="true"
-    :show-cancel="showCancel"
-    :show-confirm="showConfirm"
-    :cancel-text="cancelText"
-    :confirm-text="confirmText"
-    :confirm-enabled="!loading"
-    @update:visible="$emit('update:visible', $event)"
-    @confirm="handleConfirm"
-    @cancel="handleCancel"
-    @close="handleClose"
-  >
-    <div class="confirm-content">
-      <!-- 确认图标 -->
-      <div class="confirm-icon" :class="`icon-${type}`">
-        {{ typeIcon }}
+  <div v-if="visible" class="confirm-dialog-overlay" @click="handleOverlayClick">
+    <div class="confirm-dialog" @click.stop>
+      <div class="confirm-dialog-header">
+        <h3 class="confirm-dialog-title">
+          <i :class="iconClass" class="confirm-icon"></i>
+          {{ title }}
+        </h3>
       </div>
       
-      <!-- 确认消息 -->
-      <div class="confirm-message">
-        <div class="message-title" v-if="messageTitle">
-          {{ messageTitle }}
-        </div>
-        <div class="message-content">
-          <slot>{{ message }}</slot>
-        </div>
-        
-        <!-- 详细信息 -->
-        <div v-if="details || $slots.details" class="message-details">
-          <slot name="details">{{ details }}</slot>
-        </div>
-        
-        <!-- 输入确认 -->
-        <div v-if="requireInput" class="confirm-input">
-          <label class="input-label">{{ inputLabel }}</label>
-          <input
-            v-model="inputValue"
-            type="text"
-            class="input"
-            :placeholder="inputPlaceholder"
-            @keyup.enter="handleConfirm"
-            ref="inputRef"
-          />
-          <div v-if="inputHint" class="input-hint">{{ inputHint }}</div>
-        </div>
-        
-        <!-- 确认选项 -->
-        <div v-if="showCheckbox" class="confirm-options">
-          <label class="checkbox-label">
-            <input
-              v-model="checkboxValue"
-              type="checkbox"
-              class="checkbox"
-            />
-            <span class="checkbox-text">{{ checkboxText }}</span>
-          </label>
-        </div>
+      <div class="confirm-dialog-body">
+        <p class="confirm-message">{{ message }}</p>
+      </div>
+      
+      <div class="confirm-dialog-footer">
+        <button 
+          class="btn btn-secondary" 
+          @click="handleCancel"
+          :disabled="loading"
+        >
+          取消
+        </button>
+        <button 
+          class="btn" 
+          :class="confirmButtonClass"
+          @click="handleConfirm"
+          :disabled="loading"
+        >
+          <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+          {{ confirmText || '确定' }}
+        </button>
       </div>
     </div>
-  </BaseDialog>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import BaseDialog from './BaseDialog.vue'
+import { computed, ref } from 'vue'
 
-// Props
 const props = defineProps({
-  // 基础属性
   visible: {
     type: Boolean,
     default: false
   },
-  type: {
-    type: String,
-    default: 'info',
-    validator: (value) => ['info', 'warning', 'error', 'success', 'question'].includes(value)
-  },
   title: {
     type: String,
-    default: ''
+    default: '确认'
   },
   message: {
     type: String,
     required: true
   },
-  messageTitle: {
+  type: {
     type: String,
-    default: ''
-  },
-  details: {
-    type: String,
-    default: ''
-  },
-  
-  // 对话框配置
-  size: {
-    type: String,
-    default: 'small'
-  },
-  closable: {
-    type: Boolean,
-    default: true
-  },
-  maskClosable: {
-    type: Boolean,
-    default: false
-  },
-  
-  // 按钮配置
-  showCancel: {
-    type: Boolean,
-    default: true
-  },
-  showConfirm: {
-    type: Boolean,
-    default: true
-  },
-  cancelText: {
-    type: String,
-    default: '取消'
+    default: 'info', // 'info', 'warning', 'danger'
+    validator: (value) => ['info', 'warning', 'danger'].includes(value)
   },
   confirmText: {
     type: String,
-    default: '确定'
-  },
-  
-  // 高级功能
-  requireInput: {
-    type: Boolean,
-    default: false
-  },
-  inputLabel: {
-    type: String,
-    default: '请确认操作'
-  },
-  inputPlaceholder: {
-    type: String,
-    default: '输入确认信息'
-  },
-  inputHint: {
-    type: String,
     default: ''
-  },
-  inputValidator: {
-    type: Function,
-    default: null
-  },
-  
-  // 复选框选项
-  showCheckbox: {
-    type: Boolean,
-    default: false
-  },
-  checkboxText: {
-    type: String,
-    default: '我已了解后果'
-  },
-  
-  // 自动关闭
-  autoCloseDelay: {
-    type: Number,
-    default: 0
   }
 })
 
-// Emits
-const emit = defineEmits([
-  'update:visible', 
-  'confirm', 
-  'cancel', 
-  'close'
-])
+const emit = defineEmits(['confirm', 'cancel', 'update:visible'])
 
-// 响应式数据
 const loading = ref(false)
-const inputValue = ref('')
-const checkboxValue = ref(false)
-const inputRef = ref(null)
-const autoCloseTimer = ref(null)
 
-// 计算属性
-const typeIcon = computed(() => {
-  switch (props.type) {
-    case 'warning':
-      return '⚠️'
-    case 'error':
-      return '❌'
-    case 'success':
-      return '✅'
-    case 'question':
-      return '❓'
-    default:
-      return 'ℹ️'
+const iconClass = computed(() => {
+  const icons = {
+    info: 'fas fa-info-circle',
+    warning: 'fas fa-exclamation-triangle',
+    danger: 'fas fa-exclamation-triangle'
   }
+  return icons[props.type] || icons.info
 })
 
-const computedTitle = computed(() => {
-  if (props.title) return props.title
-  
-  switch (props.type) {
-    case 'warning':
-      return '警告'
-    case 'error':
-      return '错误'
-    case 'success':
-      return '成功'
-    case 'question':
-      return '确认'
-    default:
-      return '提示'
+const confirmButtonClass = computed(() => {
+  const classes = {
+    info: 'btn-primary',
+    warning: 'btn-warning',
+    danger: 'btn-danger'
   }
+  return classes[props.type] || classes.info
 })
 
-const canConfirm = computed(() => {
-  if (props.requireInput && props.inputValidator) {
-    return props.inputValidator(inputValue.value)
-  }
-  
-  if (props.requireInput && !inputValue.value.trim()) {
-    return false
-  }
-  
-  if (props.showCheckbox && !checkboxValue.value) {
-    return false
-  }
-  
-  return true
-})
-
-// 方法
-const handleConfirm = async () => {
-  if (!canConfirm.value || loading.value) return
-  
-  loading.value = true
-  
-  try {
-    const confirmData = {
-      type: props.type,
-      message: props.message,
-      input: props.requireInput ? inputValue.value : null,
-      checkbox: props.showCheckbox ? checkboxValue.value : null
-    }
-    
-    await emit('confirm', confirmData)
-    
-    // 成功后关闭对话框
-    emit('update:visible', false)
-  } catch (error) {
-    console.error('确认操作失败:', error)
-  } finally {
-    loading.value = false
+function handleOverlayClick() {
+  if (!loading.value) {
+    handleCancel()
   }
 }
 
-const handleCancel = () => {
-  emit('cancel')
+function handleCancel() {
   emit('update:visible', false)
+  emit('cancel')
 }
 
-const handleClose = () => {
-  emit('close')
+function handleConfirm() {
+  loading.value = true
+  emit('confirm')
+  // Note: 父组件负责关闭对话框和重置loading状态
 }
 
-// 自动关闭功能
-const startAutoClose = () => {
-  if (props.autoCloseDelay > 0) {
-    autoCloseTimer.value = setTimeout(() => {
-      handleConfirm()
-    }, props.autoCloseDelay)
-  }
-}
-
-const stopAutoClose = () => {
-  if (autoCloseTimer.value) {
-    clearTimeout(autoCloseTimer.value)
-    autoCloseTimer.value = null
-  }
-}
-
-// 重置状态
-const resetState = () => {
-  inputValue.value = ''
-  checkboxValue.value = false
-  loading.value = false
-  stopAutoClose()
-}
-
-// 生命周期
-watch(() => props.visible, async (newVal) => {
-  if (newVal) {
-    resetState()
-    
-    // 聚焦到输入框
-    if (props.requireInput) {
-      await nextTick()
-      inputRef.value?.focus()
-    }
-    
-    // 启动自动关闭
-    startAutoClose()
-  } else {
-    stopAutoClose()
-  }
-})
-
-// 导出组件实例方法
+// 暴露方法供父组件调用
 defineExpose({
-  confirm: handleConfirm,
-  cancel: handleCancel,
-  resetState
+  setLoading: (val) => { loading.value = val }
 })
 </script>
 
 <style scoped>
-.confirm-content {
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  min-height: 80px;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001; /* 比RedisOperationDialog高一层 */
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 400px;
+  max-width: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm-dialog-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+}
+
+.confirm-dialog-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .confirm-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-  margin-top: 4px;
+  font-size: 18px;
 }
 
-.icon-warning {
-  color: var(--warning-color);
+.confirm-icon.fa-info-circle {
+  color: #4a90e2;
 }
 
-.icon-error {
-  color: var(--error-color);
+.confirm-icon.fa-exclamation-triangle {
+  color: #ff9800;
 }
 
-.icon-success {
-  color: var(--success-color);
+.confirm-dialog[data-type="danger"] .confirm-icon.fa-exclamation-triangle {
+  color: #f44336;
 }
 
-.icon-question {
-  color: var(--primary-color);
-}
-
-.icon-info {
-  color: var(--primary-color);
+.confirm-dialog-body {
+  padding: 24px;
 }
 
 .confirm-message {
-  flex: 1;
-  min-width: 0;
-}
-
-.message-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--gray-800);
-  margin-bottom: 8px;
-}
-
-.message-content {
+  margin: 0;
   font-size: 14px;
-  color: var(--gray-700);
   line-height: 1.5;
-  margin-bottom: 12px;
+  color: #333;
 }
 
-.message-details {
-  font-size: 12px;
-  color: var(--gray-600);
-  background: var(--gray-50);
-  padding: 8px 12px;
+.confirm-dialog-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: #fafafa;
+}
+
+.btn {
+  padding: 8px 16px;
   border-radius: 4px;
-  border-left: 3px solid var(--gray-300);
-  margin-bottom: 16px;
-}
-
-.confirm-input {
-  margin-top: 16px;
-}
-
-.input-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--gray-700);
-  margin-bottom: 6px;
-}
-
-.input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
   font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.input-hint {
-  font-size: 11px;
-  color: var(--gray-500);
-  margin-top: 4px;
-}
-
-.confirm-options {
-  margin-top: 16px;
-}
-
-.checkbox-label {
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--gray-700);
+  gap: 6px;
+  border: 1px solid transparent;
 }
 
-.checkbox {
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  cursor: pointer;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.checkbox:checked {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
+.btn-secondary {
+  background: white;
+  color: #666;
+  border-color: #e0e0e0;
 }
 
-.checkbox-text {
-  user-select: none;
+.btn-secondary:hover:not(:disabled) {
+  background: #f8f8f8;
+  border-color: #d0d0d0;
 }
 
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .confirm-content {
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-  }
-  
-  .confirm-icon {
-    align-self: center;
-    margin-top: 0;
-  }
+.btn-primary {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #357abd;
+  border-color: #357abd;
+}
+
+.btn-warning {
+  background: #ff9800;
+  color: white;
+  border-color: #ff9800;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #f57c00;
+  border-color: #f57c00;
+}
+
+.btn-danger {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #d32f2f;
+  border-color: #d32f2f;
 }
 </style>

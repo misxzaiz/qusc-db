@@ -74,17 +74,17 @@
       @cancel="handleCloseConnectionDialog"
       @update:visible="showConnectionDialog = $event"
     />
+    
+    <!-- 右键菜单 - 移到主根节点内 -->
+    <ContextMenu
+      :visible="showMenu"
+      :items="menuItems"
+      :position="menuPosition"
+      :context="currentContext"
+      @close="closeMenu"
+      @item-click="handleMenuItemClick"
+    />
   </div>
-  
-  <!-- 右键菜单 -->
-  <ContextMenu
-    :visible="showMenu"
-    :items="menuItems"
-    :position="menuPosition"
-    :context="currentContext"
-    @close="closeMenu"
-    @item-click="handleMenuItemClick"
-  />
 </template>
 
 <script setup>
@@ -95,6 +95,9 @@ import ConnectionDialog from '@/components/dialog/ConnectionFormDialog.vue'
 import ContextMenu from '@/components/common/ContextMenu.vue'
 import { useConnectionManager } from './composables/useConnectionManager'
 import { useContextMenu } from '@/composables/useContextMenu'
+
+// 声明组件事件
+const emit = defineEmits(['connection-select'])
 
 // Store
 const connectionStore = useConnectionStore()
