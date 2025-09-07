@@ -12,14 +12,14 @@
           @click="formatCurrentSQL"
           :disabled="isFormatting"
         >
-          {{ isFormatting ? '⏳' : '🎨' }}
+          <i :class="isFormatting ? 'fas fa-spinner fa-spin' : 'fas fa-palette'"></i>
         </button>
         <button
           class="btn btn-secondary tooltip" 
           data-tooltip="清空编辑器"
           @click="clearEditor"
         >
-          🗑️
+          <i class="fas fa-trash"></i>
         </button>
         
         <button 
@@ -28,7 +28,7 @@
           :disabled="!canExecute || isExecuting"
           :title="executeButtonTooltip"
         >
-          {{ executeButtonText }}
+          <span v-html="executeButtonText"></span>
         </button>
       </div>
     </div>
@@ -71,7 +71,7 @@
       <div class="status-right">
         <span class="sql-type-indicator" v-if="sqlStatementType">{{ sqlStatementType }}</span>
         <span v-if="isLoading" class="loading-indicator">
-          ⏳ 加载中...
+          <i class="fas fa-spinner fa-spin"></i> 加载中...
         </span>
       </div>
     </div>
@@ -189,10 +189,10 @@ const currentQueryPreview = computed(() => {
 })
 
 const executeButtonText = computed(() => {
-  if (props.isExecuting) return '⏳ 执行中...'
-  if (hasSelection.value) return '▶️ 执行选中'
-  if (isMultiQuery.value) return '▶️ 执行当前'
-  return '▶️ 执行'
+  if (props.isExecuting) return '<i class="fas fa-spinner fa-spin"></i> 执行中...'
+  if (hasSelection.value) return '<i class="fas fa-play"></i> 执行选中'
+  if (isMultiQuery.value) return '<i class="fas fa-play"></i> 执行当前'
+  return '<i class="fas fa-play"></i> 执行'
 })
 
 const executeButtonTooltip = computed(() => {
