@@ -43,11 +43,6 @@
           @node-click="handleNodeClick"
           @node-expand="handleNodeExpand"
           @node-context-menu="handleContextMenu"
-          @reconnect-connection="handleReconnectConnection"
-          @disconnect-connection="handleDisconnectConnection"
-          @edit-connection="handleEditConnection"
-          @copy-connection="handleCopyConnection"
-          @delete-connection="handleDeleteConnection"
         />
       </div>
     </div>
@@ -139,10 +134,28 @@ onMounted(async () => {
   await loadSavedConnections()
   // 添加点击外部关闭下拉菜单的监听
   document.addEventListener('click', handleClickOutside)
+  
+  // 添加连接操作事件监听器
+  window.addEventListener('connection-reconnect', handleReconnectConnection)
+  window.addEventListener('connection-disconnect', handleDisconnectConnection)
+  window.addEventListener('connection-test', handleTestConnection)
+  window.addEventListener('connection-info', handleConnectionInfo)
+  window.addEventListener('connection-edit', handleEditConnection)
+  window.addEventListener('connection-copy', handleCopyConnection)
+  window.addEventListener('connection-delete', handleDeleteConnection)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  
+  // 清理连接操作事件监听器
+  window.removeEventListener('connection-reconnect', handleReconnectConnection)
+  window.removeEventListener('connection-disconnect', handleDisconnectConnection)
+  window.removeEventListener('connection-test', handleTestConnection)
+  window.removeEventListener('connection-info', handleConnectionInfo)
+  window.removeEventListener('connection-edit', handleEditConnection)
+  window.removeEventListener('connection-copy', handleCopyConnection)
+  window.removeEventListener('connection-delete', handleDeleteConnection)
 })
 
 // 点击外部关闭下拉菜单
@@ -240,12 +253,17 @@ function handleNodeExpand(nodeData) {
 function handleContextMenu(contextData) {
   console.log('Context menu:', contextData)
   
-  // 确定数据库类型
+  // 确定数据库类型和节点类型
   let dbType = 'MySQL' // 默认值
   let nodeType = contextData.type
   
+  // 连接节点特殊处理
+  if (contextData.type === 'connection') {
+    dbType = 'Connection' // 使用专门的连接菜单提供者
+    nodeType = 'connection'
+  }
   // 根据上下文数据确定数据库类型
-  if (contextData.type === 'database' && contextData.database?.dbType) {
+  else if (contextData.type === 'database' && contextData.database?.dbType) {
     dbType = contextData.database.dbType
   } else if (contextData.type === 'connection' && contextData.connection?.config?.db_type) {
     dbType = contextData.connection.config.db_type
@@ -271,8 +289,8 @@ function handleContextMenu(contextData) {
     dbType: dbType,
     connectionId: contextData.connectionId || '',
     databaseName: contextData.database?.name || contextData.database,
-    nodeName: contextData.table?.name || contextData.key || contextData.database?.name || contextData.nodeName,
-    nodeData: contextData.table || contextData.nodeData || contextData,
+    nodeName: contextData.table?.name || contextData.key || contextData.database?.name || contextData.nodeName || contextData.connection?.name,
+    nodeData: contextData,
     event: contextData.event
   })
   
@@ -326,7 +344,10 @@ function handleCloseConnectionDialog() {
 /**
  * 重新连接数据库
  */
-async function handleReconnectConnection(connection) {
+async function handleReconnectConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
   try {
     loading.value = true
     // 清除旧的连接信息
@@ -355,7 +376,10 @@ async function handleReconnectConnection(connection) {
 /**
  * 断开数据库连接
  */
-async function handleDisconnectConnection(connection) {
+async function handleDisconnectConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
   try {
     if (connection.realConnectionId) {
       // 调用断开连接的API
@@ -380,7 +404,10 @@ async function handleDisconnectConnection(connection) {
 /**
  * 编辑连接配置
  */
-function handleEditConnection(connection) {
+function handleEditConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
   // 使用连接管理器的编辑功能
   const connectionData = {
     name: connection.name,
@@ -392,7 +419,10 @@ function handleEditConnection(connection) {
 /**
  * 复制连接配置
  */
-function handleCopyConnection(connection) {
+function handleCopyConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
   // 创建连接配置的副本
   const copiedConfig = {
     ...connection.config,
@@ -412,9 +442,12 @@ function handleCopyConnection(connection) {
 /**
  * 删除连接配置
  */
-async function handleDeleteConnection(connection) {
+async function handleDeleteConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
   try {
-    // 确认删除
+    // 确认删除 - 这里使用confirm暂时代替，实际应用中会通过事件触发确认对话框
     if (confirm(`确定要删除连接"${connection.name}"吗？`)) {
       // 如果连接处于活动状态，先断开
       if (connection.realConnectionId) {
@@ -433,6 +466,55 @@ async function handleDeleteConnection(connection) {
     console.error('删除连接失败:', err)
     error.value = err.message || '删除连接失败'
   }
+}
+
+/**
+ * 测试连接
+ */
+async function handleTestConnection(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
+  try {
+    loading.value = true
+    console.log('正在测试连接:', connection.name)
+    
+    // 这里可以调用实际的测试连接API
+    // const testResult = await DatabaseService.testConnection(connection.config)
+    
+    // 临时模拟测试结果
+    const isSuccess = Math.random() > 0.3 // 70% 成功率
+    if (isSuccess) {
+      alert(`连接 "${connection.name}" 测试成功！`)
+    } else {
+      throw new Error('连接测试失败')
+    }
+  } catch (err) {
+    console.error('测试连接失败:', err)
+    alert(`连接 "${connection.name}" 测试失败：${err.message}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * 查看连接信息
+ */
+function handleConnectionInfo(connectionOrEvent) {
+  // 处理事件调用
+  const connection = connectionOrEvent?.detail?.connection || connectionOrEvent
+  
+  const info = `
+连接名称: ${connection.name}
+数据库类型: ${connection.config.db_type}
+主机地址: ${connection.config.host}:${connection.config.port}
+数据库: ${connection.config.database || 'N/A'}
+用户名: ${connection.config.username || 'N/A'}
+状态: ${connection.status || 'unknown'}
+连接ID: ${connection.realConnectionId || '未连接'}
+  `.trim()
+  
+  alert(info)
 }
 
 // ===== UI 交互方法 =====

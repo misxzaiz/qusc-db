@@ -46,36 +46,6 @@
         />
       </div>
     </div>
-    
-    <!-- 右键菜单 -->
-    <ContextMenu
-      :visible="contextMenuVisible"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      @close="handleContextMenuClose"
-    >
-      <div class="context-menu-item" @click="handleReconnect" v-if="connection.status === 'disconnected' || connection.status === 'error'">
-        <i class="fas fa-plug"></i>
-        <span>重新连接</span>
-      </div>
-      <div class="context-menu-item" @click="handleDisconnect" v-if="connection.status === 'connected'">
-        <i class="fas fa-unlink"></i>
-        <span>断开连接</span>
-      </div>
-      <div class="context-menu-item" @click="handleEdit">
-        <i class="fas fa-edit"></i>
-        <span>编辑连接</span>
-      </div>
-      <div class="context-menu-item" @click="handleCopy">
-        <i class="fas fa-copy"></i>
-        <span>复制连接</span>
-      </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-item danger" @click="handleDelete">
-        <i class="fas fa-trash"></i>
-        <span>删除连接</span>
-      </div>
-    </ContextMenu>
   </div>
 </template>
 
@@ -83,7 +53,6 @@
 import { ref, computed, watch } from 'vue'
 import DatabaseNode from './DatabaseNode.vue'
 import DatabaseService from '@/services/databaseService'
-import ContextMenu from '@/components/common/ContextMenu.vue'
 
 const props = defineProps({
   connection: {
@@ -96,17 +65,12 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['node-click', 'node-expand', 'node-context-menu', 'reconnect-connection', 'disconnect-connection', 'edit-connection', 'copy-connection', 'delete-connection'])
+const emit = defineEmits(['node-click', 'node-expand', 'node-context-menu'])
 
 const isExpanded = ref(false)
 const loading = ref(false)
 const error = ref(null)
 const databases = ref([])
-
-// 右键菜单状态
-const contextMenuVisible = ref(false)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
 
 const dbTypeIcon = computed(() => {
   const iconMap = {
@@ -239,46 +203,12 @@ async function handleRetry() {
 }
 
 function handleContextMenu(event) {
-  contextMenuX.value = event.clientX
-  contextMenuY.value = event.clientY
-  contextMenuVisible.value = true
-  
-  // 同时触发原有事件供父组件处理
   emit('node-context-menu', {
     type: 'connection',
     connection: props.connection,
+    connectionId: props.connection.realConnectionId || props.connection.id || props.connection.key,
     event
   })
-}
-
-function handleContextMenuClose() {
-  contextMenuVisible.value = false
-}
-
-// 右键菜单操作处理
-function handleReconnect() {
-  contextMenuVisible.value = false
-  emit('reconnect-connection', props.connection)
-}
-
-function handleDisconnect() {
-  contextMenuVisible.value = false
-  emit('disconnect-connection', props.connection)
-}
-
-function handleEdit() {
-  contextMenuVisible.value = false
-  emit('edit-connection', props.connection)
-}
-
-function handleCopy() {
-  contextMenuVisible.value = false
-  emit('copy-connection', props.connection)
-}
-
-function handleDelete() {
-  contextMenuVisible.value = false
-  emit('delete-connection', props.connection)
 }
 
 function handleNodeClick(nodeData) {
@@ -504,46 +434,6 @@ watch(() => props.connection.expanded, (newValue) => {
 .text-warning { color: var(--status-warning, #ff9800); }
 .text-danger { color: var(--status-danger, #f44336); }
 .text-muted { color: var(--status-muted, #9e9e9e); }
-
-/* 🖱️ 右键菜单样式 */
-.context-menu-item {
-  display: flex;
-  align-items: center;
-  gap: var(--tree-spacing-md, 8px);
-  padding: var(--tree-spacing-md, 8px) var(--tree-spacing-lg, 12px);
-  font-size: var(--tree-font-sm, 12px);
-  cursor: pointer;
-  transition: all var(--tree-transition-fast, 0.1s ease);
-  user-select: none;
-  border-radius: 4px;
-  margin: 2px;
-}
-
-.context-menu-item:hover {
-  background: var(--tree-hover-bg, rgba(74, 144, 226, 0.08));
-  transform: translateX(2px);
-}
-
-.context-menu-item.danger {
-  color: var(--status-danger, #f44336);
-}
-
-.context-menu-item.danger:hover {
-  background: rgba(244, 67, 54, 0.1);
-  color: var(--status-danger, #f44336);
-}
-
-.context-menu-item i {
-  width: 14px;
-  font-size: var(--tree-font-xs, 11px);
-  text-align: center;
-}
-
-.context-menu-divider {
-  height: 1px;
-  background: var(--tree-border-light, #e8e8e8);
-  margin: var(--tree-spacing-sm, 4px) 0;
-}
 
 /* ✨ 动画定义 */
 @keyframes spin {
