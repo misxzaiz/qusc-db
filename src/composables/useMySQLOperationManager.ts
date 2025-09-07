@@ -160,6 +160,9 @@ export function useMySQLOperationManager() {
     
     // 根据操作类型执行相应逻辑
     switch (currentOperation.value) {
+      case 'table-ddl':
+        handleTableDDL(data)
+        break
       case 'create-table':
         handleCreateTable(data)
         break
@@ -168,6 +171,9 @@ export function useMySQLOperationManager() {
         break
       case 'table-info':
         showTableInfo(data)
+        break
+      case 'select-data':
+        handleSelectData(data)
         break
       default:
         console.log('MySQL 操作:', currentOperation.value, data)
@@ -214,15 +220,103 @@ export function useMySQLOperationManager() {
       }
     }))
   }
+
+  async function handleTableDDL(data: any) {
+    console.log('📄 获取 MySQL 建表语句:', data)
+    
+    try {
+      // 构造获取建表语句的SQL
+      const showCreateSQL = `SHOW CREATE TABLE \`${data.databaseName}\`.\`${data.tableName}\``
+      
+      // 执行查询获取DDL
+      const result = await connectionStore.executeQuery(data.connectionId, showCreateSQL)
+      
+      if (result && result.rows && result.rows.length > 0) {
+        const ddlContent = result.rows[0]['Create Table']
+        
+        // 更新对话框中的DDL内容
+        if (dialogRef.value) {
+          await nextTick()
+          // 这里直接调用对话框组件的方法来更新DDL内容
+          // 注意：需要确保对话框组件暴露了相应的方法
+          if (typeof dialogRef.value.setDDLContent === 'function') {
+            dialogRef.value.setDDLContent(ddlContent)
+          }
+        }
+        
+        window.dispatchEvent(new CustomEvent('show-notification', {
+          detail: {
+            type: 'success',
+            message: `已获取表 "${data.tableName}" 的建表语句`
+          }
+        }))
+      } else {
+        throw new Error('未能获取到建表语句')
+      }
+    } catch (error: any) {
+      console.error('获取建表语句失败:', error)
+      
+      // 显示错误信息
+      if (dialogRef.value && typeof dialogRef.value.setError === 'function') {
+        dialogRef.value.setError(error.message || '获取建表语句失败')
+      }
+      
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: {
+          type: 'error',
+          message: `获取建表语句失败: ${error.message || '未知错误'}`
+        }
+      }))
+    }
+  }
+
+  async function handleSelectData(data: any) {
+    console.log('🔍 查询 MySQL 数据:', data)
+    
+    try {
+      // 执行用户输入的查询语句
+      const result = await connectionStore.executeQuery(data.connectionId, data.querySQL)
+      
+      // 在工作区显示查询结果
+      window.dispatchEvent(new CustomEvent('show-query-result', {
+        detail: {
+          connectionId: data.connectionId,
+          databaseName: data.databaseName,
+          tableName: data.tableName,
+          sql: data.querySQL,
+          result: result,
+          dbType: 'MySQL'
+        }
+      }))
+      
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: {
+          type: 'success',
+          message: `查询完成，返回 ${result?.rows?.length || 0} 条记录`
+        }
+      }))
+    } catch (error: any) {
+      console.error('查询数据失败:', error)
+      
+      window.dispatchEvent(new CustomEvent('show-notification', {
+        detail: {
+          type: 'error',
+          message: `查询失败: ${error.message || '未知错误'}`
+        }
+      }))
+    }
+  }
   
   // ===== 辅助函数 =====
   
   function getOperationName(operation: string): string {
     const operationNames: Record<string, string> = {
+      'table-ddl': '查看建表语句',
       'create-table': '创建表',
       'create-database': '创建数据库',
       'table-info': '表信息',
       'database-info': '数据库信息',
+      'select-data': '查询数据',
       'export-database': '导出数据库',
       'import-database': '导入数据库',
       'backup-database': '备份数据库',

@@ -92,6 +92,51 @@
       @update:visible="showRedisInfoDialog = $event"
     />
 
+    <!-- MySQL操作对话框 -->
+    <MySQLOperationDialog
+      v-if="showMySQLDialog"
+      ref="mySQLDialogRef"
+      :visible="showMySQLDialog"
+      :operation="currentMySQLOperation"
+      :connection-id="mySQLOperationData.connectionId"
+      :database-name="mySQLOperationData.databaseName"
+      :table-name="mySQLOperationData.tableName"
+      :context="mySQLOperationData.context"
+      @confirm="handleMySQLDialogConfirm"
+      @cancel="handleMySQLDialogCancel"
+      @update:visible="showMySQLDialog = $event"
+    />
+
+    <!-- PostgreSQL操作对话框 -->
+    <PostgreSQLOperationDialog
+      v-if="showPostgreSQLDialog"
+      ref="postgreSQLDialogRef"
+      :visible="showPostgreSQLDialog"
+      :operation="currentPostgreSQLOperation"
+      :connection-id="postgreSQLOperationData.connectionId"
+      :database-name="postgreSQLOperationData.databaseName"
+      :table-name="postgreSQLOperationData.tableName"
+      :context="postgreSQLOperationData.context"
+      @confirm="handlePostgreSQLDialogConfirm"
+      @cancel="handlePostgreSQLDialogCancel"
+      @update:visible="showPostgreSQLDialog = $event"
+    />
+
+    <!-- MongoDB操作对话框 -->
+    <MongoDBOperationDialog
+      v-if="showMongoDBDialog"
+      ref="mongoDBDialogRef"
+      :visible="showMongoDBDialog"
+      :operation="currentMongoDBOperation"
+      :connection-id="mongoDBOperationData.connectionId"
+      :database-name="mongoDBOperationData.databaseName"
+      :collection-name="mongoDBOperationData.collectionName"
+      :context="mongoDBOperationData.context"
+      @confirm="handleMongoDBDialogConfirm"
+      @cancel="handleMongoDBDialogCancel"
+      @update:visible="showMongoDBDialog = $event"
+    />
+
     <!-- UI主题管理器 -->
     <UIThemeManager 
       :current-db-type="currentConnection?.config?.db_type || 'MySQL'"
@@ -129,6 +174,9 @@ import DialogSystem from './components/dialog/index.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
 import UIThemeManager from './components/database-renderers/UIThemeManager.vue'
 import RedisOperationDialog from './components/dialog/RedisOperationDialog.vue'
+import MySQLOperationDialog from './components/dialog/MySQLOperationDialog.vue'
+import PostgreSQLOperationDialog from './components/dialog/PostgreSQLOperationDialog.vue'
+import MongoDBOperationDialog from './components/dialog/MongoDBOperationDialog.vue'
 import ConfirmDialog from './components/dialog/ConfirmDialog.vue'
 import RedisInfoDialog from './components/dialog/RedisInfoDialog.vue'
 
