@@ -115,6 +115,9 @@ import { useTheme } from './composables/useTheme.js'
 import { useShortcuts, useAppShortcuts } from './composables/useShortcuts.js'
 import { useUserPreferences } from './composables/usePersistence.js'
 import { useRedisOperationManager } from './composables/useRedisOperationManager.ts'
+import { useMySQLOperationManager } from './composables/useMySQLOperationManager.ts'
+import { usePostgreSQLOperationManager } from './composables/usePostgreSQLOperationManager.ts'
+import { useMongoDBOperationManager } from './composables/useMongoDBOperationManager.ts'
 
 // 组件导入
 import AppToolbar from './components/toolbar/index.vue'
@@ -152,6 +155,42 @@ const {
   handleDialogConfirm: handleRedisDialogConfirm,
   handleDialogCancel: handleRedisDialogCancel
 } = useRedisOperationManager()
+
+// MySQL 操作管理器
+const {
+  showDialog: showMySQLDialog,
+  currentOperation: currentMySQLOperation,
+  operationData: mySQLOperationData,
+  dialogRef: mySQLDialogRef,
+  initEventListeners: initMySQLEvents,
+  cleanupEventListeners: cleanupMySQLEvents,
+  handleDialogConfirm: handleMySQLDialogConfirm,
+  handleDialogCancel: handleMySQLDialogCancel
+} = useMySQLOperationManager()
+
+// PostgreSQL 操作管理器
+const {
+  showDialog: showPostgreSQLDialog,
+  currentOperation: currentPostgreSQLOperation,
+  operationData: postgreSQLOperationData,
+  dialogRef: postgreSQLDialogRef,
+  initEventListeners: initPostgreSQLEvents,
+  cleanupEventListeners: cleanupPostgreSQLEvents,
+  handleDialogConfirm: handlePostgreSQLDialogConfirm,
+  handleDialogCancel: handlePostgreSQLDialogCancel
+} = usePostgreSQLOperationManager()
+
+// MongoDB 操作管理器
+const {
+  showDialog: showMongoDBDialog,
+  currentOperation: currentMongoDBOperation,
+  operationData: mongoDBOperationData,
+  dialogRef: mongoDBDialogRef,
+  initEventListeners: initMongoDBEvents,
+  cleanupEventListeners: cleanupMongoDBEvents,
+  handleDialogConfirm: handleMongoDBDialogConfirm,
+  handleDialogCancel: handleMongoDBDialogCancel
+} = useMongoDBOperationManager()
 
 // 响应式数据
 const activePanel = ref('')
@@ -332,8 +371,11 @@ onMounted(async () => {
     initTheme()
     themeStore.initTheme()
     
-    // 初始化Redis事件监听器
+    // 初始化所有数据库事件监听器
     initRedisEvents()
+    initMySQLEvents()
+    initPostgreSQLEvents()
+    initMongoDBEvents()
     
     // 初始化全局快捷键
     initShortcuts()
@@ -378,6 +420,9 @@ onMounted(async () => {
 // 组件卸载时清理
 onBeforeUnmount(() => {
   cleanupRedisEvents()
+  cleanupMySQLEvents()
+  cleanupPostgreSQLEvents()
+  cleanupMongoDBEvents()
 })
 
 // 确认对话框状态
