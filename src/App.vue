@@ -137,16 +137,6 @@
       @update:visible="showMongoDBDialog = $event"
     />
 
-    <!-- UI主题管理器 -->
-    <UIThemeManager 
-      :current-db-type="currentConnection?.config?.db_type || 'MySQL'"
-      :connection-id="currentConnection?.id || ''"
-      :show-quick-switch="true"
-      :allow-customization="true"
-      @theme-change="handleThemeChange"
-      @db-theme-change="handleDbThemeChange"
-      @layout-change="handleLayoutChange"
-    />
   </div>
 </template>
 
@@ -172,7 +162,6 @@ import AISidebar from './components/sidebar/ai/index.vue'
 import NotificationToast from './components/notification/index.vue'
 import DialogSystem from './components/dialog/index.vue'
 import SettingsDialog from './components/settings/SettingsDialog.vue'
-import UIThemeManager from './components/database-renderers/UIThemeManager.vue'
 import RedisOperationDialog from './components/dialog/RedisOperationDialog.vue'
 import MySQLOperationDialog from './components/dialog/MySQLOperationDialog.vue'
 import PostgreSQLOperationDialog from './components/dialog/PostgreSQLOperationDialog.vue'
@@ -355,24 +344,6 @@ const hideNotification = () => {
   notification.show = false
 }
 
-// 主题变化处理
-const handleThemeChange = (themeInfo) => {
-  themeStore.updateGlobalTheme(themeInfo.theme)
-  if (themeInfo.colors) {
-    themeStore.updateCustomColors(themeInfo.colors)
-  }
-  showNotification('主题已更新')
-}
-
-const handleDbThemeChange = (dbThemeInfo) => {
-  themeStore.updateDatabaseContext(currentConnection.value?.id, dbThemeInfo.dbType)
-  showNotification(`${dbThemeInfo.dbType} 主题已更新`)
-}
-
-const handleLayoutChange = (layoutInfo) => {
-  themeStore.updateLayoutConfig(layoutInfo)
-  showNotification('布局配置已更新')
-}
 
 // 主题切换处理
 const handleThemeToggle = () => {
