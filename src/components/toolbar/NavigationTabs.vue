@@ -7,7 +7,8 @@
       :class="{ active: activePanel === panel.id }"
       @click="$emit('panel-select', panel.id)"
     >
-      <span class="tab-icon">{{ panel.icon }}</span>
+      <i v-if="panel.icon.startsWith('fas')" :class="panel.icon" class="tab-icon"></i>
+      <span v-else class="tab-icon">{{ panel.icon }}</span>
       <span class="tab-name">{{ panel.name }}</span>
     </button>
   </div>
@@ -30,7 +31,7 @@ const panels = [
   {
     id: 'db',
     name: 'DB',
-    icon: ''
+    icon: 'fas fa-database'
   },
   {
     id: 'history',

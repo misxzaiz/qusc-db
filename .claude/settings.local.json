@@ -93,7 +93,8 @@
       "Bash(cargo test:*)",
       "Bash(timeout:*)",
       "Bash(gh pr:*)",
-      "Read(//d/**)"
+      "Read(//d/**)",
+      "Bash(tree:*)"
     ],
     "deny": []
   }
