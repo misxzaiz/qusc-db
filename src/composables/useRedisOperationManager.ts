@@ -206,19 +206,14 @@ export function useRedisOperationManager() {
   async function handleDatabaseInfo(event) {
     const { connectionId, databaseName } = event.detail
     
-    try {
-      const result = await connectionStore.executeQuery(connectionId, 'INFO keyspace')
-      showNotification({
-        type: 'info',
-        message: `数据库 "${databaseName}" 信息`,
-        result: result
-      })
-    } catch (error) {
-      showNotification({
-        type: 'error',
-        message: `获取数据库信息失败: ${error.message}`
-      })
-    }
+    // 显示数据库信息对话框
+    window.dispatchEvent(new CustomEvent('show-redis-info-dialog', {
+      detail: {
+        title: `数据库 "${databaseName}" 信息`,
+        connectionId,
+        databaseName
+      }
+    }))
   }
   
   function handleRefreshDatabase(event) {
@@ -302,7 +297,7 @@ export function useRedisOperationManager() {
   // ===== 核心执行方法 =====
   
   async function executeRedisOperation(operation, data) {
-    const { connectionId, keyName, value, fieldName, ttl, pattern } = data
+    const { connectionId, keyName, value, fieldName, ttl, pattern, targetDatabase } = data
     
     let command = ''
     
@@ -349,6 +344,9 @@ export function useRedisOperationManager() {
         break
       case 'keys':
         command = `KEYS ${pattern || '*'}`
+        break
+      case 'switch-database':
+        command = `SELECT ${targetDatabase}`
         break
       default:
         throw new Error(`不支持的操作: ${operation}`)

@@ -77,6 +77,20 @@
       @cancel="handleConfirmDialogCancel"
       @update:visible="showConfirmDialog = $event"
     />
+    
+    <!-- Redis信息对话框 -->
+    <RedisInfoDialog
+      v-if="showRedisInfoDialog"
+      ref="redisInfoDialogRef"
+      :visible="showRedisInfoDialog"
+      :title="redisInfoData.title"
+      :data="redisInfoData.data"
+      :loading="redisInfoData.loading"
+      :error="redisInfoData.error"
+      @close="handleRedisInfoDialogClose"
+      @retry="handleRedisInfoRetry"
+      @update:visible="showRedisInfoDialog = $event"
+    />
 
     <!-- UI主题管理器 -->
     <UIThemeManager 
@@ -113,6 +127,7 @@ import SettingsDialog from './components/settings/SettingsDialog.vue'
 import UIThemeManager from './components/database-renderers/UIThemeManager.vue'
 import RedisOperationDialog from './components/dialog/RedisOperationDialog.vue'
 import ConfirmDialog from './components/dialog/ConfirmDialog.vue'
+import RedisInfoDialog from './components/dialog/RedisInfoDialog.vue'
 
 // 状态管理
 const connectionStore = useConnectionStore()
@@ -401,6 +416,55 @@ window.addEventListener('show-confirm-dialog', (event) => {
   confirmDialogResolver.value = resolve
   showConfirmDialog.value = true
 })
+
+// Redis信息对话框状态
+const showRedisInfoDialog = ref(false)
+const redisInfoData = ref({})
+const redisInfoDialogRef = ref(null)
+
+// Redis信息对话框处理函数
+async function handleRedisInfoDialogClose() {
+  showRedisInfoDialog.value = false
+  redisInfoData.value = {}
+}
+
+async function handleRedisInfoRetry() {
+  if (redisInfoData.value.connectionId) {
+    await loadRedisInfo(redisInfoData.value.connectionId)
+  }
+}
+
+// Redis信息对话框事件监听
+window.addEventListener('show-redis-info-dialog', async (event) => {
+  const { title, connectionId, databaseName } = event.detail
+  
+  redisInfoData.value = {
+    title,
+    connectionId,
+    databaseName,
+    data: {},
+    loading: true,
+    error: ''
+  }
+  showRedisInfoDialog.value = true
+  
+  // 加载数据
+  await loadRedisInfo(connectionId)
+})
+
+async function loadRedisInfo(connectionId) {
+  redisInfoData.value.loading = true
+  redisInfoData.value.error = ''
+  
+  try {
+    const result = await connectionStore.executeQuery(connectionId, 'INFO')
+    redisInfoData.value.data = result
+    redisInfoData.value.loading = false
+  } catch (error) {
+    redisInfoData.value.loading = false
+    redisInfoData.value.error = error.message || '获取Redis信息失败'
+  }
+}
 </script>
 
 <style scoped>

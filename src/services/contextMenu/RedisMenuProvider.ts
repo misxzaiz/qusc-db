@@ -27,7 +27,7 @@ export enum RedisAction {
   LIST_PUSH = 'redis_list_push',
   SET_VIEW_MEMBERS = 'redis_set_members',
   SET_ADD_MEMBER = 'redis_set_add',
-  
+
   // 新键操作
   CREATE_NEW_KEY = 'redis_create_key'
 }
@@ -221,7 +221,7 @@ export class RedisMenuProvider extends MenuProvider {
         case RedisAction.COPY_KEY_NAME:
           return this.copyKeyName(context)
           
-        case RedisAction.CREATE_KEY:
+        case RedisAction.CREATE_NEW_KEY:
           return this.createKey(context)
         
         case RedisAction.SEARCH_KEYS:
@@ -229,6 +229,9 @@ export class RedisMenuProvider extends MenuProvider {
         
         case RedisAction.FLUSH_DATABASE:
           return this.flushDatabase(context)
+          
+        case RedisAction.SWITCH_DATABASE:
+          return this.switchDatabase(context)
           
         // Hash 操作
         case RedisAction.HASH_VIEW_FIELDS:
@@ -404,6 +407,14 @@ export class RedisMenuProvider extends MenuProvider {
       message: '清空数据库操作已触发',
       needsRefresh: true
     }
+  }
+  
+  private async switchDatabase(context: MenuContext): Promise<OperationResult> {
+    this.showOperationDialog('switch-database', context, {
+      title: '切换数据库',
+      description: '选择要切换到的Redis数据库'
+    })
+    return { success: true, message: '打开切换数据库对话框' }
   }
   
   // Hash 操作

@@ -19,7 +19,7 @@
             v-model="keyName" 
             type="text" 
             class="field-input" 
-            :readonly="!isNewKey"
+            :readonly="!canEditKeyName"
             placeholder="输入Redis键名"
           />
         </div>
@@ -125,6 +125,44 @@
           </div>
         </template>
         
+        <template v-if="operation === 'expire'">
+          <div class="field-group">
+            <label class="field-label">过期时间 (秒):</label>
+            <input 
+              v-model.number="ttl" 
+              type="number" 
+              class="field-input" 
+              placeholder="输入过期时间(秒)"
+              min="1"
+              required
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label">说明:</label>
+            <p class="field-note">设置键的过期时间，到期后键将被自动删除</p>
+          </div>
+        </template>
+        
+        <template v-if="operation === 'switch-database'">
+          <div class="field-group">
+            <label class="field-label">目标数据库:</label>
+            <select 
+              v-model.number="targetDatabase" 
+              class="field-input"
+              required
+            >
+              <option value="" disabled>选择数据库</option>
+              <option v-for="db in availableDatabases" :key="db" :value="db">
+                数据库 {{ db }}
+              </option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">说明:</label>
+            <p class="field-note">切换到指定的Redis数据库 (0-15)</p>
+          </div>
+        </template>
+        
         <!-- 错误信息 -->
         <div v-if="error" class="error-message">
           <i class="fas fa-exclamation-triangle"></i>
@@ -193,13 +231,23 @@ const fieldName = ref('')
 const ttl = ref(null)
 const pattern = ref('*')
 const keys = ref([])
+const targetDatabase = ref('')
+const availableDatabases = ref([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
 
 // 状态
 const loading = ref(false)
 const error = ref('')
 
 // 计算属性
-const isNewKey = computed(() => props.operation === 'set' && !props.keyName)
+const isNewKey = computed(() => {
+  // 只有在创建新键时才允许编辑键名
+  return props.operation === 'set' && !props.keyName
+})
+
+const canEditKeyName = computed(() => {
+  // 新建键时可以编辑键名，其他操作时只读
+  return isNewKey.value
+})
 
 const operationConfig = computed(() => {
   const configs = {
@@ -208,7 +256,9 @@ const operationConfig = computed(() => {
     del: { title: '删除键', icon: 'fas fa-trash', confirm: '删除' },
     hget: { title: '获取Hash字段', icon: 'fas fa-download', confirm: '获取' },
     hset: { title: '设置Hash字段', icon: 'fas fa-upload', confirm: '设置' },
-    keys: { title: '查找键', icon: 'fas fa-search', confirm: '搜索' }
+    keys: { title: '查找键', icon: 'fas fa-search', confirm: '搜索' },
+    expire: { title: '设置过期时间', icon: 'fas fa-clock', confirm: '设置' },
+    'switch-database': { title: '切换数据库', icon: 'fas fa-exchange-alt', confirm: '切换' }
   }
   return configs[props.operation] || { title: '操作', icon: 'fas fa-cog', confirm: '确定' }
 })
@@ -218,7 +268,7 @@ const operationIcon = computed(() => operationConfig.value.icon)
 const confirmButtonText = computed(() => operationConfig.value.confirm)
 
 const isValid = computed(() => {
-  if (!keyName.value.trim()) return false
+  if (!keyName.value.trim() && props.operation !== 'switch-database') return false
   
   switch (props.operation) {
     case 'set':
@@ -226,6 +276,10 @@ const isValid = computed(() => {
     case 'hget':
     case 'hset':
       return fieldName.value.trim() !== '' && (props.operation === 'hget' || value.value.trim() !== '')
+    case 'expire':
+      return ttl.value && ttl.value > 0
+    case 'switch-database':
+      return targetDatabase.value !== ''
     default:
       return true
   }
@@ -249,6 +303,7 @@ function resetForm() {
   ttl.value = null
   pattern.value = '*'
   keys.value = []
+  targetDatabase.value = ''
   error.value = ''
   loading.value = false
 }
@@ -287,6 +342,12 @@ function handleConfirm() {
       break
     case 'keys':
       operationData.pattern = pattern.value.trim()
+      break
+    case 'expire':
+      operationData.ttl = ttl.value
+      break
+    case 'switch-database':
+      operationData.targetDatabase = targetDatabase.value
       break
   }
   
@@ -453,6 +514,14 @@ defineExpose({
 .key-item i {
   color: #4a90e2;
   font-size: 12px;
+}
+
+.field-note {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  font-style: italic;
 }
 
 .error-message {
