@@ -60,11 +60,7 @@ export class MySQLMenuProvider extends MenuProvider {
   
   private getDatabaseMenuItems(context: MenuContext): MenuItem[] {
     return [
-      {
-        id: MySQLAction.DATABASE_INFO,
-        label: '数据库信息',
-        icon: 'fas fa-info-circle'
-      },
+      this.createDisabledItem(MySQLAction.DATABASE_INFO, '数据库信息', 'fas fa-info-circle'),
       {
         id: MySQLAction.REFRESH_DATABASE,
         label: '刷新',
@@ -77,11 +73,7 @@ export class MySQLMenuProvider extends MenuProvider {
         label: '新建表',
         icon: 'fas fa-table'
       },
-      {
-        id: MySQLAction.SEARCH_TABLES,
-        label: '搜索表',
-        icon: 'fas fa-search'
-      },
+      this.createDisabledItem(MySQLAction.SEARCH_TABLES, '搜索表', 'fas fa-search'),
       this.createSeparator(),
       {
         id: MySQLAction.EXECUTE_SQL,
@@ -90,16 +82,8 @@ export class MySQLMenuProvider extends MenuProvider {
         shortcut: 'Ctrl+Enter'
       },
       this.createSeparator(),
-      {
-        id: MySQLAction.BACKUP_DATABASE,
-        label: '备份数据库',
-        icon: 'fas fa-download'
-      },
-      {
-        id: MySQLAction.RESTORE_DATABASE,
-        label: '还原数据库',
-        icon: 'fas fa-upload'
-      }
+      this.createDisabledItem(MySQLAction.BACKUP_DATABASE, '备份数据库', 'fas fa-download'),
+      this.createDisabledItem(MySQLAction.RESTORE_DATABASE, '还原数据库', 'fas fa-upload')
     ]
   }
   
@@ -131,64 +115,24 @@ export class MySQLMenuProvider extends MenuProvider {
         label: '查询数据',
         icon: 'fas fa-search'
       },
-      {
-        id: MySQLAction.INSERT_DATA,
-        label: '插入数据',
-        icon: 'fas fa-plus'
-      },
-      {
-        id: MySQLAction.UPDATE_DATA,
-        label: '更新数据',
-        icon: 'fas fa-edit'
-      },
-      {
-        id: MySQLAction.DELETE_DATA,
-        label: '删除数据',
-        icon: 'fas fa-minus'
-      },
+      this.createDisabledItem(MySQLAction.INSERT_DATA, '插入数据', 'fas fa-plus'),
+      this.createDisabledItem(MySQLAction.UPDATE_DATA, '更新数据', 'fas fa-edit'),
+      this.createDisabledItem(MySQLAction.DELETE_DATA, '删除数据', 'fas fa-minus'),
       
       this.createSeparator(),
       
       // 结构操作
-      {
-        id: MySQLAction.ADD_COLUMN,
-        label: '添加列',
-        icon: 'fas fa-columns'
-      },
-      {
-        id: MySQLAction.MODIFY_COLUMN,
-        label: '修改列',
-        icon: 'fas fa-edit'
-      },
-      {
-        id: MySQLAction.ADD_INDEX,
-        label: '添加索引',
-        icon: 'fas fa-key'
-      },
-      {
-        id: MySQLAction.ADD_FOREIGN_KEY,
-        label: '添加外键',
-        icon: 'fas fa-link'
-      },
+      this.createDisabledItem(MySQLAction.ADD_COLUMN, '添加列', 'fas fa-columns'),
+      this.createDisabledItem(MySQLAction.MODIFY_COLUMN, '修改列', 'fas fa-edit'),
+      this.createDisabledItem(MySQLAction.ADD_INDEX, '添加索引', 'fas fa-key'),
+      this.createDisabledItem(MySQLAction.ADD_FOREIGN_KEY, '添加外键', 'fas fa-link'),
       
       this.createSeparator(),
       
       // 表管理操作
-      {
-        id: MySQLAction.DUPLICATE_TABLE,
-        label: '复制表',
-        icon: 'fas fa-copy'
-      },
-      {
-        id: MySQLAction.EXPORT_TABLE_DATA,
-        label: '导出数据',
-        icon: 'fas fa-download'
-      },
-      {
-        id: MySQLAction.IMPORT_TABLE_DATA,
-        label: '导入数据',
-        icon: 'fas fa-upload'
-      },
+      this.createDisabledItem(MySQLAction.DUPLICATE_TABLE, '复制表', 'fas fa-copy'),
+      this.createDisabledItem(MySQLAction.EXPORT_TABLE_DATA, '导出数据', 'fas fa-download'),
+      this.createDisabledItem(MySQLAction.IMPORT_TABLE_DATA, '导入数据', 'fas fa-upload'),
       
       this.createSeparator(),
       

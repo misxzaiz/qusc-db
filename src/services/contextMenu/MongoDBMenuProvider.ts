@@ -73,16 +73,8 @@ export class MongoDBMenuProvider extends MenuProvider {
   
   private getDatabaseMenuItems(context: MenuContext): MenuItem[] {
     return [
-      {
-        id: MongoDBAction.DATABASE_INFO,
-        label: '数据库信息',
-        icon: 'fas fa-info-circle'
-      },
-      {
-        id: MongoDBAction.DATABASE_STATS,
-        label: '数据库统计',
-        icon: 'fas fa-chart-bar'
-      },
+      this.createDisabledItem(MongoDBAction.DATABASE_INFO, '数据库信息', 'fas fa-info-circle'),
+      this.createDisabledItem(MongoDBAction.DATABASE_STATS, '数据库统计', 'fas fa-chart-bar'),
       {
         id: MongoDBAction.REFRESH_DATABASE,
         label: '刷新',
@@ -95,41 +87,16 @@ export class MongoDBMenuProvider extends MenuProvider {
         label: '新建集合',
         icon: 'fas fa-plus'
       },
-      {
-        id: MongoDBAction.CREATE_VIEW,
-        label: '新建视图',
-        icon: 'fas fa-eye'
-      },
+      this.createDisabledItem(MongoDBAction.CREATE_VIEW, '新建视图', 'fas fa-eye'),
       this.createSeparator(),
-      {
-        id: MongoDBAction.SEARCH_COLLECTIONS,
-        label: '搜索集合',
-        icon: 'fas fa-search'
-      },
+      this.createDisabledItem(MongoDBAction.SEARCH_COLLECTIONS, '搜索集合', 'fas fa-search'),
       this.createSeparator(),
-      {
-        id: MongoDBAction.EXECUTE_COMMAND,
-        label: '执行命令',
-        icon: 'fas fa-terminal',
-        shortcut: 'Ctrl+Enter'
-      },
+      this.createDisabledItem(MongoDBAction.EXECUTE_COMMAND, '执行命令', 'fas fa-terminal'),
       this.createSeparator(),
-      {
-        id: MongoDBAction.PROFILING,
-        label: '性能分析',
-        icon: 'fas fa-tachometer-alt'
-      },
+      this.createDisabledItem(MongoDBAction.PROFILING, '性能分析', 'fas fa-tachometer-alt'),
       this.createSeparator(),
-      {
-        id: MongoDBAction.BACKUP_DATABASE,
-        label: '备份数据库',
-        icon: 'fas fa-download'
-      },
-      {
-        id: MongoDBAction.RESTORE_DATABASE,
-        label: '还原数据库',
-        icon: 'fas fa-upload'
-      }
+      this.createDisabledItem(MongoDBAction.BACKUP_DATABASE, '备份数据库', 'fas fa-download'),
+      this.createDisabledItem(MongoDBAction.RESTORE_DATABASE, '还原数据库', 'fas fa-upload')
     ]
   }
   
@@ -163,55 +130,29 @@ export class MongoDBMenuProvider extends MenuProvider {
       
       // 文档操作（视图不支持写操作）
       baseItems.push(
-        {
-          id: MongoDBAction.FIND_DOCUMENTS,
-          label: '查询文档',
-          icon: 'fas fa-search'
-        },
+        this.createDisabledItem(MongoDBAction.FIND_DOCUMENTS, '查询文档', 'fas fa-search'),
         {
           id: MongoDBAction.INSERT_DOCUMENT,
           label: '插入文档',
           icon: 'fas fa-plus'
         },
-        {
-          id: MongoDBAction.UPDATE_DOCUMENTS,
-          label: '更新文档',
-          icon: 'fas fa-edit'
-        },
-        {
-          id: MongoDBAction.DELETE_DOCUMENTS,
-          label: '删除文档',
-          icon: 'fas fa-minus'
-        }
+        this.createDisabledItem(MongoDBAction.UPDATE_DOCUMENTS, '更新文档', 'fas fa-edit'),
+        this.createDisabledItem(MongoDBAction.DELETE_DOCUMENTS, '删除文档', 'fas fa-minus')
       )
       
       baseItems.push(this.createSeparator())
       
       // 聚合操作
-      baseItems.push({
-        id: MongoDBAction.AGGREGATE,
-        label: '聚合查询',
-        icon: 'fas fa-filter'
-      })
+      baseItems.push(this.createDisabledItem(MongoDBAction.AGGREGATE, '聚合查询', 'fas fa-filter'))
     }
     
     baseItems.push(this.createSeparator())
     
     // 数据导入导出
-    baseItems.push(
-      {
-        id: MongoDBAction.EXPORT_COLLECTION,
-        label: '导出数据',
-        icon: 'fas fa-download'
-      }
-    )
+    baseItems.push(this.createDisabledItem(MongoDBAction.EXPORT_COLLECTION, '导出数据', 'fas fa-download'))
     
     if (!isView) {
-      baseItems.push({
-        id: MongoDBAction.IMPORT_COLLECTION,
-        label: '导入数据',
-        icon: 'fas fa-upload'
-      })
+      baseItems.push(this.createDisabledItem(MongoDBAction.IMPORT_COLLECTION, '导入数据', 'fas fa-upload'))
     }
     
     if (!isView) {
@@ -219,92 +160,48 @@ export class MongoDBMenuProvider extends MenuProvider {
       
       // 索引操作
       baseItems.push(
-        {
-          id: MongoDBAction.VIEW_INDEXES,
-          label: '查看索引',
-          icon: 'fas fa-key'
-        },
+        this.createDisabledItem(MongoDBAction.VIEW_INDEXES, '查看索引', 'fas fa-key'),
         {
           id: MongoDBAction.CREATE_INDEX,
           label: '创建索引',
           icon: 'fas fa-plus-square'
         },
-        {
-          id: MongoDBAction.DROP_INDEX,
-          label: '删除索引',
-          icon: 'fas fa-minus-square'
-        },
-        {
-          id: MongoDBAction.REINDEX_COLLECTION,
-          label: '重建索引',
-          icon: 'fas fa-redo'
-        }
+        this.createDisabledItem(MongoDBAction.DROP_INDEX, '删除索引', 'fas fa-minus-square'),
+        this.createDisabledItem(MongoDBAction.REINDEX_COLLECTION, '重建索引', 'fas fa-redo')
       )
       
       baseItems.push(this.createSeparator())
       
       // 验证和约束
       baseItems.push(
-        {
-          id: MongoDBAction.VIEW_VALIDATION,
-          label: '查看验证规则',
-          icon: 'fas fa-shield-alt'
-        },
-        {
-          id: MongoDBAction.SET_VALIDATION,
-          label: '设置验证规则',
-          icon: 'fas fa-shield'
-        }
+        this.createDisabledItem(MongoDBAction.VIEW_VALIDATION, '查看验证规则', 'fas fa-shield-alt'),
+        this.createDisabledItem(MongoDBAction.SET_VALIDATION, '设置验证规则', 'fas fa-shield')
       )
       
       baseItems.push(this.createSeparator())
       
       // 性能和维护操作
       baseItems.push(
-        {
-          id: MongoDBAction.EXPLAIN_QUERY,
-          label: '查询分析',
-          icon: 'fas fa-search-plus'
-        },
-        {
-          id: MongoDBAction.VALIDATE_COLLECTION,
-          label: '验证集合',
-          icon: 'fas fa-check'
-        }
+        this.createDisabledItem(MongoDBAction.EXPLAIN_QUERY, '查询分析', 'fas fa-search-plus'),
+        this.createDisabledItem(MongoDBAction.VALIDATE_COLLECTION, '验证集合', 'fas fa-check')
       )
       
       if (!isCapped) {
-        baseItems.push({
-          id: MongoDBAction.COMPACT_COLLECTION,
-          label: '压缩集合',
-          icon: 'fas fa-compress'
-        })
+        baseItems.push(this.createDisabledItem(MongoDBAction.COMPACT_COLLECTION, '压缩集合', 'fas fa-compress'))
       }
       
       // 分片信息
       baseItems.push(
         this.createSeparator(),
-        {
-          id: MongoDBAction.VIEW_SHARDING_INFO,
-          label: '分片信息',
-          icon: 'fas fa-sitemap'
-        }
+        this.createDisabledItem(MongoDBAction.VIEW_SHARDING_INFO, '分片信息', 'fas fa-sitemap')
       )
       
       // GridFS 特殊操作
       if (isGridFS) {
         baseItems.push(
           this.createSeparator(),
-          {
-            id: MongoDBAction.UPLOAD_FILE,
-            label: '上传文件',
-            icon: 'fas fa-cloud-upload-alt'
-          },
-          {
-            id: MongoDBAction.DOWNLOAD_FILE,
-            label: '下载文件',
-            icon: 'fas fa-cloud-download-alt'
-          }
+          this.createDisabledItem(MongoDBAction.UPLOAD_FILE, '上传文件', 'fas fa-cloud-upload-alt'),
+          this.createDisabledItem(MongoDBAction.DOWNLOAD_FILE, '下载文件', 'fas fa-cloud-download-alt')
         )
       }
     }
@@ -314,16 +211,8 @@ export class MongoDBMenuProvider extends MenuProvider {
     // 集合管理操作
     if (!isView) {
       baseItems.push(
-        {
-          id: MongoDBAction.DUPLICATE_COLLECTION,
-          label: '复制集合',
-          icon: 'fas fa-copy'
-        },
-        {
-          id: MongoDBAction.RENAME_COLLECTION,
-          label: '重命名集合',
-          icon: 'fas fa-i-cursor'
-        }
+        this.createDisabledItem(MongoDBAction.DUPLICATE_COLLECTION, '复制集合', 'fas fa-copy'),
+        this.createDisabledItem(MongoDBAction.RENAME_COLLECTION, '重命名集合', 'fas fa-i-cursor')
       )
     }
     

@@ -101,23 +101,10 @@ export class RedisMenuProvider extends MenuProvider {
         'fas fa-edit'
       ),
       this.createSeparator(),
-      {
-        id: RedisAction.GET_KEY_INFO,
-        label: '键信息',
-        icon: 'fas fa-info'
-      },
+      this.createDisabledItem(RedisAction.GET_KEY_INFO, '键信息', 'fas fa-info'),
       this.createSeparator(),
-      this.createShortcutItem(
-        RedisAction.COPY_KEY_NAME,
-        '复制键名',
-        'Ctrl+C',
-        'fas fa-copy'
-      ),
-      {
-        id: RedisAction.RENAME_KEY,
-        label: '重命名',
-        icon: 'fas fa-i-cursor'
-      },
+      this.createDisabledItem(RedisAction.COPY_KEY_NAME, '复制键名', 'fas fa-copy'),
+      this.createDisabledItem(RedisAction.RENAME_KEY, '重命名', 'fas fa-i-cursor'),
       this.createSeparator(),
       {
         id: RedisAction.SET_EXPIRE,

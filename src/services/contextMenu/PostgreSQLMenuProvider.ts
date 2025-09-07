@@ -74,11 +74,7 @@ export class PostgreSQLMenuProvider extends MenuProvider {
   
   private getDatabaseMenuItems(context: MenuContext): MenuItem[] {
     return [
-      {
-        id: PostgreSQLAction.DATABASE_INFO,
-        label: '数据库信息',
-        icon: 'fas fa-info-circle'
-      },
+      this.createDisabledItem(PostgreSQLAction.DATABASE_INFO, '数据库信息', 'fas fa-info-circle'),
       {
         id: PostgreSQLAction.REFRESH_DATABASE,
         label: '刷新',
@@ -91,27 +87,11 @@ export class PostgreSQLMenuProvider extends MenuProvider {
         label: '新建表',
         icon: 'fas fa-table'
       },
-      {
-        id: PostgreSQLAction.CREATE_VIEW,
-        label: '新建视图',
-        icon: 'fas fa-eye'
-      },
-      {
-        id: PostgreSQLAction.CREATE_FUNCTION,
-        label: '新建函数',
-        icon: 'fas fa-function'
-      },
-      {
-        id: PostgreSQLAction.CREATE_SEQUENCE,
-        label: '新建序列',
-        icon: 'fas fa-sort-numeric-up'
-      },
+      this.createDisabledItem(PostgreSQLAction.CREATE_VIEW, '新建视图', 'fas fa-eye'),
+      this.createDisabledItem(PostgreSQLAction.CREATE_FUNCTION, '新建函数', 'fas fa-function'),
+      this.createDisabledItem(PostgreSQLAction.CREATE_SEQUENCE, '新建序列', 'fas fa-sort-numeric-up'),
       this.createSeparator(),
-      {
-        id: PostgreSQLAction.SEARCH_OBJECTS,
-        label: '搜索对象',
-        icon: 'fas fa-search'
-      },
+      this.createDisabledItem(PostgreSQLAction.SEARCH_OBJECTS, '搜索对象', 'fas fa-search'),
       this.createSeparator(),
       {
         id: PostgreSQLAction.EXECUTE_SQL,
@@ -120,16 +100,8 @@ export class PostgreSQLMenuProvider extends MenuProvider {
         shortcut: 'Ctrl+Enter'
       },
       this.createSeparator(),
-      {
-        id: PostgreSQLAction.BACKUP_DATABASE,
-        label: '备份数据库',
-        icon: 'fas fa-download'
-      },
-      {
-        id: PostgreSQLAction.RESTORE_DATABASE,
-        label: '还原数据库',
-        icon: 'fas fa-upload'
-      }
+      this.createDisabledItem(PostgreSQLAction.BACKUP_DATABASE, '备份数据库', 'fas fa-download'),
+      this.createDisabledItem(PostgreSQLAction.RESTORE_DATABASE, '还原数据库', 'fas fa-upload')
     ]
   }
   
@@ -178,80 +150,32 @@ export class PostgreSQLMenuProvider extends MenuProvider {
     if (!isView) {
       // 数据操作（视图通常不支持全部数据操作）
       baseItems.push(
-        {
-          id: PostgreSQLAction.SELECT_DATA,
-          label: '查询数据',
-          icon: 'fas fa-search'
-        },
-        {
-          id: PostgreSQLAction.INSERT_DATA,
-          label: '插入数据',
-          icon: 'fas fa-plus'
-        },
-        {
-          id: PostgreSQLAction.UPDATE_DATA,
-          label: '更新数据',
-          icon: 'fas fa-edit'
-        },
-        {
-          id: PostgreSQLAction.DELETE_DATA,
-          label: '删除数据',
-          icon: 'fas fa-minus'
-        },
+        this.createDisabledItem(PostgreSQLAction.SELECT_DATA, '查询数据', 'fas fa-search'),
+        this.createDisabledItem(PostgreSQLAction.INSERT_DATA, '插入数据', 'fas fa-plus'),
+        this.createDisabledItem(PostgreSQLAction.UPDATE_DATA, '更新数据', 'fas fa-edit'),
+        this.createDisabledItem(PostgreSQLAction.DELETE_DATA, '删除数据', 'fas fa-minus'),
         this.createSeparator()
       )
       
       // 结构操作
       baseItems.push(
-        {
-          id: PostgreSQLAction.ADD_COLUMN,
-          label: '添加列',
-          icon: 'fas fa-columns'
-        },
-        {
-          id: PostgreSQLAction.MODIFY_COLUMN,
-          label: '修改列',
-          icon: 'fas fa-edit'
-        },
-        {
-          id: PostgreSQLAction.ADD_INDEX,
-          label: '添加索引',
-          icon: 'fas fa-key'
-        },
-        {
-          id: PostgreSQLAction.ADD_CONSTRAINT,
-          label: '添加约束',
-          icon: 'fas fa-shield-alt'
-        },
-        {
-          id: PostgreSQLAction.ADD_TRIGGER,
-          label: '添加触发器',
-          icon: 'fas fa-bolt'
-        },
+        this.createDisabledItem(PostgreSQLAction.ADD_COLUMN, '添加列', 'fas fa-columns'),
+        this.createDisabledItem(PostgreSQLAction.MODIFY_COLUMN, '修改列', 'fas fa-edit'),
+        this.createDisabledItem(PostgreSQLAction.ADD_INDEX, '添加索引', 'fas fa-key'),
+        this.createDisabledItem(PostgreSQLAction.ADD_CONSTRAINT, '添加约束', 'fas fa-shield-alt'),
+        this.createDisabledItem(PostgreSQLAction.ADD_TRIGGER, '添加触发器', 'fas fa-bolt'),
         this.createSeparator()
       )
     }
     
     // 表管理操作
     baseItems.push(
-      {
-        id: PostgreSQLAction.DUPLICATE_TABLE,
-        label: isView ? '复制视图' : '复制表',
-        icon: 'fas fa-copy'
-      },
-      {
-        id: PostgreSQLAction.EXPORT_TABLE_DATA,
-        label: '导出数据',
-        icon: 'fas fa-download'
-      }
+      this.createDisabledItem(PostgreSQLAction.DUPLICATE_TABLE, isView ? '复制视图' : '复制表', 'fas fa-copy'),
+      this.createDisabledItem(PostgreSQLAction.EXPORT_TABLE_DATA, '导出数据', 'fas fa-download')
     )
     
     if (!isView) {
-      baseItems.push({
-        id: PostgreSQLAction.IMPORT_TABLE_DATA,
-        label: '导入数据',
-        icon: 'fas fa-upload'
-      })
+      baseItems.push(this.createDisabledItem(PostgreSQLAction.IMPORT_TABLE_DATA, '导入数据', 'fas fa-upload'))
     }
     
     baseItems.push(this.createSeparator())
@@ -259,47 +183,19 @@ export class PostgreSQLMenuProvider extends MenuProvider {
     if (!isView) {
       // PostgreSQL 特有维护操作
       baseItems.push(
-        {
-          id: PostgreSQLAction.VACUUM_TABLE,
-          label: 'VACUUM',
-          icon: 'fas fa-broom'
-        },
-        {
-          id: PostgreSQLAction.VACUUM_FULL_TABLE,
-          label: 'VACUUM FULL',
-          icon: 'fas fa-magic'
-        },
-        {
-          id: PostgreSQLAction.ANALYZE_TABLE,
-          label: 'ANALYZE',
-          icon: 'fas fa-chart-line'
-        },
-        {
-          id: PostgreSQLAction.REINDEX_TABLE,
-          label: 'REINDEX',
-          icon: 'fas fa-redo'
-        },
-        {
-          id: PostgreSQLAction.CLUSTER_TABLE,
-          label: 'CLUSTER',
-          icon: 'fas fa-layer-group'
-        },
+        this.createDisabledItem(PostgreSQLAction.VACUUM_TABLE, 'VACUUM', 'fas fa-broom'),
+        this.createDisabledItem(PostgreSQLAction.VACUUM_FULL_TABLE, 'VACUUM FULL', 'fas fa-magic'),
+        this.createDisabledItem(PostgreSQLAction.ANALYZE_TABLE, 'ANALYZE', 'fas fa-chart-line'),
+        this.createDisabledItem(PostgreSQLAction.REINDEX_TABLE, 'REINDEX', 'fas fa-redo'),
+        this.createDisabledItem(PostgreSQLAction.CLUSTER_TABLE, 'CLUSTER', 'fas fa-layer-group'),
         this.createSeparator()
       )
     }
     
     // 权限操作
     baseItems.push(
-      {
-        id: PostgreSQLAction.GRANT_PERMISSIONS,
-        label: '授予权限',
-        icon: 'fas fa-user-plus'
-      },
-      {
-        id: PostgreSQLAction.REVOKE_PERMISSIONS,
-        label: '撤销权限',
-        icon: 'fas fa-user-minus'
-      },
+      this.createDisabledItem(PostgreSQLAction.GRANT_PERMISSIONS, '授予权限', 'fas fa-user-plus'),
+      this.createDisabledItem(PostgreSQLAction.REVOKE_PERMISSIONS, '撤销权限', 'fas fa-user-minus'),
       this.createSeparator()
     )
     

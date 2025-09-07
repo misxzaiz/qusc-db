@@ -22,6 +22,10 @@ export abstract class MenuProvider {
   protected createShortcutItem(id: string, label: string, shortcut: string, icon?: string): MenuItem {
     return { id, label, shortcut, icon }
   }
+  
+  protected createDisabledItem(id: string, label: string, icon?: string): MenuItem {
+    return { id, label, icon, disabled: true }
+  }
 }
 
 export class ContextMenuManager {
