@@ -240,13 +240,18 @@ const error = ref('')
 
 // 计算属性
 const isNewKey = computed(() => {
-  // 只有在创建新键时才允许编辑键名
-  return props.operation === 'set' && !props.keyName
+  // 新建键的条件：操作是set且没有传入键名
+  return props.operation === 'set' && (!props.keyName || props.keyName.trim() === '')
 })
 
 const canEditKeyName = computed(() => {
-  // 新建键时可以编辑键名，其他操作时只读
+  // 新建键时可以编辑键名，其他操作时只读显示
   return isNewKey.value
+})
+
+const shouldShowKeyName = computed(() => {
+  // 所有操作都应该显示键名字段，但编辑权限不同
+  return true
 })
 
 const operationConfig = computed(() => {

@@ -7,6 +7,7 @@ export enum RedisAction {
   FLUSH_DATABASE = 'redis_flush_db',
   DATABASE_INFO = 'redis_db_info',
   REFRESH_DATABASE = 'redis_refresh_db',
+  SEARCH_KEYS = 'redis_search_keys',
   
   // 键级操作
   VIEW_KEY = 'redis_view_key',
@@ -24,7 +25,10 @@ export enum RedisAction {
   HASH_VIEW_FIELDS = 'redis_hash_fields',
   HASH_ADD_FIELD = 'redis_hash_add',
   LIST_VIEW = 'redis_list_view',
+  LIST_VIEW_ELEMENTS = 'redis_list_elements',
   LIST_PUSH = 'redis_list_push',
+  LIST_PUSH_LEFT = 'redis_list_push_left',
+  LIST_PUSH_RIGHT = 'redis_list_push_right',
   SET_VIEW_MEMBERS = 'redis_set_members',
   SET_ADD_MEMBER = 'redis_set_add',
 
@@ -506,10 +510,13 @@ export class RedisMenuProvider extends MenuProvider {
   // ===== 辅助方法 =====
   
   private showOperationDialog(operation: string, context: MenuContext, options: any = {}): void {
+    // 对于新建键操作，不传递keyName，让对话框知道这是新建操作
+    const keyName = options.isNewKey ? '' : context.nodeName
+    
     window.dispatchEvent(new CustomEvent('redis-show-operation-dialog', {
       detail: {
         operation,
-        keyName: context.nodeName,
+        keyName: keyName,
         dataType: context.nodeData?.dataType || 'String',
         connectionId: context.connectionId,
         databaseName: context.databaseName,
