@@ -175,6 +175,7 @@ function handleContextMenu(event) {
     type: 'database',
     database: props.database,
     connectionId: props.connectionId,
+    dbType: props.dbType,
     event
   })
 }

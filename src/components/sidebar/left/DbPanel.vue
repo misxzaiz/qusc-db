@@ -263,7 +263,9 @@ function handleContextMenu(contextData) {
     nodeType = 'connection'
   }
   // 根据上下文数据确定数据库类型
-  else if (contextData.type === 'database' && contextData.database?.dbType) {
+  else if (contextData.type === 'database' && contextData.dbType) {
+    dbType = contextData.dbType
+  } else if (contextData.type === 'database' && contextData.database?.dbType) {
     dbType = contextData.database.dbType
   } else if (contextData.type === 'connection' && contextData.connection?.config?.db_type) {
     dbType = contextData.connection.config.db_type
