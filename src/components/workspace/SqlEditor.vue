@@ -14,14 +14,7 @@
         >
           {{ isFormatting ? '⏳' : '🎨' }}
         </button>
-        <button 
-          class="btn btn-secondary tooltip" 
-          data-tooltip="触发智能补全"
-          @click="triggerSmartCompletion"
-        >
-          💡
-        </button>
-        <button 
+        <button
           class="btn btn-secondary tooltip" 
           data-tooltip="清空编辑器"
           @click="clearEditor"
