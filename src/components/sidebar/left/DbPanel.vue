@@ -27,6 +27,16 @@
       </div>
     </div>
 
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+      <input 
+        type="text" 
+        v-model="filterQuery"
+        placeholder="🔍 筛选表名称..."
+        class="filter-input"
+      />
+    </div>
+
     <div class="panel-content" v-if="!loading && !error">
       <!-- 连接列表 -->
       <div v-if="connections.length === 0" class="empty-state">
@@ -40,6 +50,7 @@
         <ConnectionNode 
           :connection="connection"
           :selected-node="selectedNode"
+          :table-filter="filterQuery"
           @node-click="handleNodeClick"
           @node-expand="handleNodeExpand"
           @node-context-menu="handleContextMenu"
@@ -83,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useConnectionStore } from '@/stores/connection'
 import ConnectionNode from './db/common/ConnectionNode.vue'
 import ConnectionDialog from '@/components/dialog/ConnectionFormDialog.vue'
@@ -124,6 +135,9 @@ const loading = ref(false)
 const error = ref('')
 const selectedNode = ref(null)
 const connections = ref([])
+
+// 筛选相关
+const filterQuery = ref('')
 
 // UI 状态管理
 const showManageMenu = ref(false)
@@ -859,5 +873,46 @@ async function handleCleanupConnections() {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* 筛选区域样式 */
+.filter-section {
+  padding: var(--tree-spacing-md) var(--tree-spacing-xl);
+  border-bottom: var(--tree-line-width) solid var(--tree-border-medium);
+  background: var(--tree-bg-secondary);
+}
+
+.filter-input {
+  width: 100%;
+  padding: var(--tree-spacing-sm) var(--tree-spacing-md);
+  padding-left: 32px; /* 为图标留空间 */
+  border: var(--tree-line-width) solid var(--tree-border-medium);
+  border-radius: 4px;
+  font-size: var(--tree-font-sm);
+  background: var(--tree-bg-primary);
+  color: var(--tree-text-primary);
+  transition: all var(--tree-transition-normal);
+  
+  /* 模拟搜索图标背景效果 */
+  background-image: linear-gradient(45deg, transparent 32%, var(--tree-text-muted) 32%, var(--tree-text-muted) 33%, transparent 33%);
+  background-repeat: no-repeat;
+  background-position: 8px center;
+  background-size: 16px 16px;
+}
+
+.filter-input::placeholder {
+  color: var(--tree-text-muted);
+  opacity: 0.7;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--tree-primary);
+  box-shadow: 0 0 0 2px var(--tree-primary-light);
+}
+
+.filter-input:hover:not(:focus) {
+  border-color: var(--tree-primary);
+  background: var(--tree-bg-secondary);
 }
 </style>

@@ -15,7 +15,7 @@
       
       <div v-if="isTablesExpanded" class="folder-content">
         <TableNode
-          v-for="table in tables"
+          v-for="table in filteredTables"
           :key="table.name"
           :table="table"
           :database="database"
@@ -44,7 +44,7 @@
       
       <div v-if="isViewsExpanded" class="folder-content">
         <TableNode
-          v-for="view in views"
+          v-for="view in filteredViews"
           :key="view.name"
           :table="view"
           :database="database"
@@ -73,7 +73,7 @@
       
       <div v-if="isProceduresExpanded" class="folder-content">
         <TableNode
-          v-for="procedure in procedures"
+          v-for="procedure in filteredProcedures"
           :key="procedure.name"
           :table="procedure"
           :database="database"
@@ -102,7 +102,7 @@
       
       <div v-if="isFunctionsExpanded" class="folder-content">
         <TableNode
-          v-for="func in functions"
+          v-for="func in filteredFunctions"
           :key="func.name"
           :table="func"
           :database="database"
@@ -160,6 +160,10 @@ const props = defineProps({
   selectedNode: {
     type: Object,
     default: null
+  },
+  tableFilter: {
+    type: String,
+    default: ''
   }
 })
 
@@ -170,6 +174,47 @@ const isTablesExpanded = ref(true) // 表默认展开
 const isViewsExpanded = ref(false)
 const isProceduresExpanded = ref(false)
 const isFunctionsExpanded = ref(false)
+
+// 筛选逻辑：根据表名筛选
+const filteredTables = computed(() => {
+  if (!props.tableFilter.trim()) {
+    return props.tables
+  }
+  const query = props.tableFilter.toLowerCase().trim()
+  return props.tables.filter(table => 
+    table.name.toLowerCase().includes(query)
+  )
+})
+
+const filteredViews = computed(() => {
+  if (!props.tableFilter.trim()) {
+    return props.views
+  }
+  const query = props.tableFilter.toLowerCase().trim()
+  return props.views.filter(view => 
+    view.name.toLowerCase().includes(query)
+  )
+})
+
+const filteredProcedures = computed(() => {
+  if (!props.tableFilter.trim()) {
+    return props.procedures
+  }
+  const query = props.tableFilter.toLowerCase().trim()
+  return props.procedures.filter(procedure => 
+    procedure.name.toLowerCase().includes(query)
+  )
+})
+
+const filteredFunctions = computed(() => {
+  if (!props.tableFilter.trim()) {
+    return props.functions
+  }
+  const query = props.tableFilter.toLowerCase().trim()
+  return props.functions.filter(func => 
+    func.name.toLowerCase().includes(query)
+  )
+})
 
 const isEmpty = computed(() => {
   return props.tables.length === 0 && 

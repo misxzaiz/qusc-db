@@ -40,6 +40,7 @@
           :connection-id="connection.realConnectionId"
           :db-type="connection.config.db_type"
           :selected-node="selectedNode"
+          :table-filter="tableFilter"
           @node-click="handleNodeClick"
           @node-expand="handleNodeExpand"
           @node-context-menu="handleNodeContextMenu"
@@ -62,6 +63,10 @@ const props = defineProps({
   selectedNode: {
     type: Object,
     default: null
+  },
+  tableFilter: {
+    type: String,
+    default: ''
   }
 })
 
