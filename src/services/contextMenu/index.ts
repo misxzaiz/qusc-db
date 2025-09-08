@@ -23,5 +23,3 @@ globalMenuManager.registerProvider(new ConnectionMenuProvider())
 globalMenuManager.registerProvider(new MySQLMenuProvider())
 globalMenuManager.registerProvider(new PostgreSQLMenuProvider())
 globalMenuManager.registerProvider(new MongoDBMenuProvider())
-
-console.log('已初始化全局菜单管理器并注册所有数据库类型的菜单提供器')

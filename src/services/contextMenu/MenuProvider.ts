@@ -33,7 +33,6 @@ export class ContextMenuManager {
   
   registerProvider(provider: MenuProvider) {
     this.providers.set(provider.dbType, provider)
-    console.log(`已注册 ${provider.dbType} 菜单提供器`)
   }
   
   getMenuItems(context: MenuContext): MenuItem[] {
@@ -44,7 +43,6 @@ export class ContextMenuManager {
     }
     
     const items = provider.getMenuItems(context)
-    console.log(`为 ${context.dbType}/${context.nodeType} 生成了 ${items.length} 个菜单项`)
     return items
   }
   
@@ -54,7 +52,6 @@ export class ContextMenuManager {
       throw new Error(`未找到 ${context.dbType} 的菜单提供器`)
     }
     
-    console.log(`执行操作: ${actionId} 在 ${context.dbType}/${context.nodeType}`)
     return provider.executeAction(actionId, context)
   }
   

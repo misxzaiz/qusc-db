@@ -239,7 +239,6 @@ function getConnectionStatus(connectionName) {
  */
 function handleNodeClick(nodeData) {
   selectedNode.value = nodeData
-  console.log('Selected node:', nodeData)
   
   // 如果是连接节点的点击，可能需要更新连接状态
   if (nodeData.type === 'connection') {
@@ -258,14 +257,13 @@ function handleNodeClick(nodeData) {
  * 处理节点展开事件
  */
 function handleNodeExpand(nodeData) {
-  console.log('Node expanded:', nodeData)
+  // 节点展开处理逻辑
 }
 
 /**
  * 处理右键菜单事件
  */
 function handleContextMenu(contextData) {
-  console.log('Context menu:', contextData)
   
   // 确定数据库类型和节点类型
   let dbType = 'MySQL' // 默认值
@@ -322,7 +320,6 @@ function showConnectionContextMenu(contextData) {
   // - 重新连接
   // - 编辑连接  
   // - 删除连接
-  console.log('Connection context menu for:', contextData.connection.name)
 }
 
 // ===== 连接管理方法 =====
@@ -380,7 +377,7 @@ async function handleReconnectConnection(connectionOrEvent) {
       }, 100)
     }
     
-    console.log('开始重新连接:', connection.name)
+    // 开始重新连接
   } catch (err) {
     console.error('重新连接失败:', err)
     error.value = err.message || '重新连接失败'
@@ -410,7 +407,7 @@ async function handleDisconnectConnection(connectionOrEvent) {
       connectionNode.expanded = false
     }
     
-    console.log('已断开连接:', connection.name)
+    // 连接已断开
   } catch (err) {
     console.error('断开连接失败:', err)
     error.value = err.message || '断开连接失败'
@@ -475,8 +472,6 @@ async function handleDeleteConnection(connectionOrEvent) {
       
       // 重新加载连接列表
       await loadSavedConnections()
-      
-      console.log('已删除连接配置:', connection.name)
     }
   } catch (err) {
     console.error('删除连接失败:', err)
@@ -493,7 +488,7 @@ async function handleTestConnection(connectionOrEvent) {
   
   try {
     loading.value = true
-    console.log('正在测试连接:', connection.name)
+    // 开始测试连接
     
     // 这里可以调用实际的测试连接API
     // const testResult = await DatabaseService.testConnection(connection.config)
@@ -549,7 +544,7 @@ async function handleExportConnections() {
   showManageMenu.value = false
   try {
     // 这里实现导出逻辑
-    console.log('导出连接配置')
+    // 导出连接配置
   } catch (err) {
     console.error('导出失败:', err)
   }
@@ -562,7 +557,7 @@ async function handleImportConnections() {
   showManageMenu.value = false
   try {
     // 这里实现导入逻辑
-    console.log('导入连接配置')
+    // 导入连接配置
   } catch (err) {
     console.error('导入失败:', err)
   }
@@ -575,7 +570,7 @@ async function handleCleanupConnections() {
   showManageMenu.value = false
   try {
     // 这里实现清理逻辑
-    console.log('清理失效连接')
+    // 清理失效连接
   } catch (err) {
     console.error('清理失败:', err)
   }
