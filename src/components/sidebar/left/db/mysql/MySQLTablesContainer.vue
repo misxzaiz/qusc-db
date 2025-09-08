@@ -116,6 +116,12 @@
       </div>
     </div>
     
+    <!-- 筛选无结果提示 -->
+    <div v-if="tableFilter && !hasAnyFilteredResults" class="no-filter-results">
+      <i class="fas fa-search"></i>
+      <span>没有找到包含 "{{ tableFilter }}" 的表</span>
+    </div>
+    
     <!-- 空状态 -->
     <div v-if="isEmpty" class="empty-state">
       <i class="fas fa-inbox"></i>
@@ -221,6 +227,13 @@ const isEmpty = computed(() => {
          props.views.length === 0 && 
          props.procedures.length === 0 && 
          props.functions.length === 0
+})
+
+const hasAnyFilteredResults = computed(() => {
+  return filteredTables.value.length > 0 || 
+         filteredViews.value.length > 0 || 
+         filteredProcedures.value.length > 0 || 
+         filteredFunctions.value.length > 0
 })
 
 function toggleTablesFolder() {
@@ -433,6 +446,30 @@ function handleNodeContextMenu(nodeData) {
     opacity: 1;
     transform: translateY(0) scaleY(1);
   }
+}
+
+/* 🔍 筛选无结果提示样式 */
+.no-filter-results {
+  display: flex;
+  align-items: center;
+  padding: var(--tree-spacing-md, 8px) var(--tree-spacing-lg, 12px);
+  color: var(--tree-text-secondary, #666666);
+  font-size: var(--tree-font-sm, 12px);
+  text-align: center;
+  background: rgba(33, 150, 243, 0.05);
+  border: 1px dashed rgba(33, 150, 243, 0.2);
+  border-radius: 6px;
+  margin: var(--tree-spacing-sm, 4px) 0;
+}
+
+.no-filter-results i {
+  margin-right: var(--tree-spacing-sm, 4px);
+  color: var(--tree-primary, #4a90e2);
+  font-size: var(--tree-font-sm, 12px);
+}
+
+.no-filter-results span {
+  flex: 1;
 }
 
 /* 📄 空状态样式 */

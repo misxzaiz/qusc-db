@@ -94,7 +94,10 @@
       "Bash(timeout:*)",
       "Bash(gh pr:*)",
       "Read(//d/**)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git add src/components/sidebar/left/db/mysql/MySQLTablesContainer.vue)",
+      "Bash(git commit -am \"$(cat <<''EOF''\nfeat(table-filter): 添加筛选无结果提示\n\n- 在MySQLTablesContainer中添加hasAnyFilteredResults计算属性\n- 当用户筛选但无匹配结果时显示友好提示\n- 优化用户体验，避免筛选时的困惑感\n- 使用与现有设计一致的样式风格\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"feat(table-filter): 添加筛选无结果提示\n\n- 在MySQLTablesContainer中添加hasAnyFilteredResults计算属性\n- 当用户筛选但无匹配结果时显示友好提示\n- 优化用户体验，避免筛选时的困惑感\n- 使用与现有设计一致的样式风格\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": []
   }
