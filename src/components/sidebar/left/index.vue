@@ -15,7 +15,6 @@
 
 <script setup>
 import ConnectionPanel from './ConnectionPanel.vue'
-import DatabaseTreePanel from './DatabaseTreePanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import DbPanel from "@/components/sidebar/left/DbPanel.vue";
 
