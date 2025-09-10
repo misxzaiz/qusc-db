@@ -274,6 +274,15 @@ function handleContextMenu(contextData) {
     dbType = 'Connection' // 使用专门的连接菜单提供者
     nodeType = 'connection'
   }
+  // MongoDB类型特殊处理
+  else if (contextData.type === 'mongodb-collection') {
+    dbType = 'MongoDB'
+    nodeType = 'collection'
+  }
+  else if (contextData.type === 'mongodb-gridfs') {
+    dbType = 'MongoDB'
+    nodeType = 'collection' // GridFS也作为集合处理
+  }
   // 根据上下文数据确定数据库类型
   else if (contextData.type === 'database' && contextData.dbType) {
     dbType = contextData.dbType
@@ -303,9 +312,17 @@ function handleContextMenu(contextData) {
     dbType: dbType,
     connectionId: contextData.connectionId || '',
     databaseName: contextData.database?.name || contextData.database,
-    nodeName: contextData.table?.name || contextData.key || contextData.database?.name || contextData.nodeName || contextData.connection?.name,
+    nodeName: contextData.collection?.name || contextData.bucket?.name || contextData.table?.name || contextData.key || contextData.database?.name || contextData.nodeName || contextData.connection?.name,
     nodeData: contextData,
     event: contextData.event
+  })
+  
+  console.log('右键菜单上下文:', {
+    originalType: contextData.type,
+    mappedNodeType: nodeType,
+    dbType: dbType,
+    nodeName: menuContext.nodeName,
+    contextData: contextData
   })
   
   // 显示右键菜单

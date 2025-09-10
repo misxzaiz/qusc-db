@@ -1,6 +1,7 @@
 import { ref, nextTick } from 'vue'
 import { globalMenuManager } from '@/services/contextMenu'
 import type { MenuContext, MenuItem } from '@/types/contextMenu'
+import { useNotificationStore } from '@/stores/notification.js'
 
 export function useContextMenu() {
   const showMenu = ref(false)
@@ -25,6 +26,10 @@ export function useContextMenu() {
 
     // 显示菜单
     showMenu.value = true
+
+    // 使用 notification store 显示提示
+    const notificationStore = useNotificationStore()
+    notificationStore.warning('右键菜单功能正在开发完善中 🚧')
 
     console.log(`显示 ${context.dbType}/${context.nodeType} 的右键菜单`, items)
   }
