@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连接同步测试</title>
+</head>
+<body>
+    <h1>连接配置同步测试</h1>
+    
+    <button onclick="saveTestConnection()">保存测试连接</button>
+    <button onclick="deleteTestConnection()">删除测试连接</button>
+    <button onclick="checkLocalStorage()">检查LocalStorage</button>
+    
+    <div id="log" style="margin-top: 20px; padding: 10px; background: #f5f5f5; max-height: 300px; overflow-y: auto;"></div>
+
+    <script>
+        // 监听连接配置更新事件
+        window.addEventListener('connections-updated', (event) => {
+            log(`🎉 检测到连接配置更新事件:`, event.detail);
+        });
+
+        function log(message, data = null) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            
+            const p = document.createElement('p');
+            p.style.margin = '5px 0';
+            p.style.borderBottom = '1px solid #ddd';
+            p.innerHTML = logEntry.replace(/\n/g, '<br>');
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function saveTestConnection() {
+            const testConfig = {
+                db_type: 'MySQL',
+                host: 'localhost',
+                port: 3306,
+                username: 'test',
+                password: 'test123',
+                database: 'testdb'
+            };
+            
+            // 模拟保存连接配置的过程
+            const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}');
+            saved['test-connection-' + Date.now()] = testConfig;
+            localStorage.setItem('qusc-db-connections', JSON.stringify(saved));
+            
+            // 触发事件（模拟我们修改的代码）
+            window.dispatchEvent(new CustomEvent('connections-updated', {
+                detail: { action: 'saved', name: 'test-connection', config: testConfig }
+            }));
+            
+            log('✅ 测试连接已保存并触发更新事件');
+        }
+
+        function deleteTestConnection() {
+            const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}');
+            const keys = Object.keys(saved).filter(key => key.startsWith('test-connection'));
+            
+            if (keys.length > 0) {
+                const keyToDelete = keys[0];
+                delete saved[keyToDelete];
+                localStorage.setItem('qusc-db-connections', JSON.stringify(saved));
+                
+                // 触发事件
+                window.dispatchEvent(new CustomEvent('connections-updated', {
+                    detail: { action: 'deleted', name: keyToDelete }
+                }));
+                
+                log('✅ 测试连接已删除并触发更新事件');
+            } else {
+                log('❌ 没有找到可删除的测试连接');
+            }
+        }
+
+        function checkLocalStorage() {
+            const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}');
+            log('📋 当前LocalStorage中的连接配置:', saved);
+            log(`📊 连接总数: ${Object.keys(saved).length}`);
+        }
+
+        log('🚀 连接同步测试页面已加载');
+        log('💡 点击按钮测试事件触发机制');
+    </script>
+</body>
+</html>

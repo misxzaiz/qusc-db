@@ -395,6 +395,11 @@ export const useConnectionStore = defineStore('connection', () => {
       const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}')
       saved[name] = encryptedConfig
       localStorage.setItem('qusc-db-connections', JSON.stringify(saved))
+      
+      // 触发连接配置更新事件
+      window.dispatchEvent(new CustomEvent('connections-updated', {
+        detail: { action: 'saved', name, config }
+      }))
     } catch (error) {
       console.error('保存连接配置失败:', error)
       throw new Error('保存连接配置失败: ' + error.message)
@@ -460,6 +465,11 @@ export const useConnectionStore = defineStore('connection', () => {
     const saved = JSON.parse(localStorage.getItem('qusc-db-connections') || '{}')
     delete saved[name]
     localStorage.setItem('qusc-db-connections', JSON.stringify(saved))
+    
+    // 触发连接配置更新事件
+    window.dispatchEvent(new CustomEvent('connections-updated', {
+      detail: { action: 'deleted', name }
+    }))
   }
 
   // 选择数据库

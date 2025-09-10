@@ -632,10 +632,31 @@ const handleLoadQuery = (event) => {
   })
 }
 
+// 处理连接配置更新事件
+const handleConnectionsUpdated = async (event) => {
+  console.log('检测到连接配置更新:', event.detail)
+  const previousCount = connectionsList.value.length
+  
+  // 重新加载连接列表
+  await loadConnectionsList()
+  
+  const newCount = connectionsList.value.length
+  if (newCount !== previousCount) {
+    const { action, name } = event.detail
+    if (action === 'saved') {
+      notificationStore.success(`连接 "${name}" 已添加到工作区`)
+    } else if (action === 'deleted') {
+      notificationStore.success(`连接 "${name}" 已从工作区移除`)
+    }
+    console.log(`连接列表已更新: ${previousCount} → ${newCount}`)
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   window.addEventListener('insert-text', handleInsertText)
   window.addEventListener('load-query', handleLoadQuery)
+  window.addEventListener('connections-updated', handleConnectionsUpdated)
   
   // 加载连接列表
   await loadConnectionsList()
@@ -650,6 +671,7 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('insert-text', handleInsertText)
   window.removeEventListener('load-query', handleLoadQuery)
+  window.removeEventListener('connections-updated', handleConnectionsUpdated)
 })
 
 // 暴露方法给父组件使用
