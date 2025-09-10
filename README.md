@@ -54,7 +54,7 @@ cargo tauri build
 
 - Rust 1.89.0+
 - Node.js 18+
-- Windows 10+ / macOS 10.15+ / Linux
+- Windows 10+
 
 ## 🔧 开发
 
