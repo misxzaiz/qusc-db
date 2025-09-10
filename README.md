@@ -1,65 +1,87 @@
-# QuSC-DB - 轻量级AI SQL客户端
+# QuSC-DB
 
-QuSC-DB 是一个基于 Tauri + Web 技术栈的轻量级 AI 辅助 SQL 客户端，支持 MySQL 和 Redis 数据库，集成 DeepSeek AI 模型辅助 SQL 操作。
+> 现代化数据库管理工具，内置AI助手
+
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 
 ![QuSC-DB 界面预览](doc/assets/img.png)
 
 ## ✨ 特性
 
-- 🚀 **轻量级**: 基于 Tauri，包体积小，启动速度快
-- 🗄️ **多数据库支持**: 支持 MySQL 和 Redis，预留扩展其他数据库的能力
--   **AI 助手**: 集成 DeepSeek AI，提供 SQL 生成、优化和错误解释
-- 🎨 **现代化界面**: 简洁直观的用户界面
-- 🔒 **安全可靠**: 本地存储，数据安全有保障
-
-## 🛠️ 技术栈
-
-- **前端**: HTML5 + CSS3 + 原生 JavaScript (ES2021+)
-- **后端**: Rust 1.89.0 + Tauri 2.7.1
-- **数据库**: MySQL (mysql_async) + Redis (redis crate)
-- **AI 服务**: DeepSeek API
-- **构建工具**: Vite
-
-## 📦 安装要求
-
-- Rust 1.89.0+
-- Node.js 18+
-- npm 或 yarn
+- 🗄️ **多数据库支持** - MySQL、Redis、MongoDB、PostgreSQL
+- 🤖 **AI智能助手** - SQL生成、查询优化、错误解释
+- 🎨 **现代化界面** - Vue 3 + 响应式设计
+- ⚡ **轻量高效** - Tauri驱动，原生性能
+- 🔐 **数据安全** - 本地存储，隐私保护
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
-
+### 安装依赖
 ```bash
-git clone git@github.com:misxzaiz/qusc-db.git
-cd qusc-db
-```
-
-### 2. 安装依赖
-
-```bash
-# 安装前端依赖
 npm install
 ```
 
-### 3. 开发模式运行
-
-**方式一：分别启动前后端**
-```bash
-# 启动前端开发服务器
-npm run dev
-
-# 在新终端中启动后端 Tauri 应用
-cargo tauri dev
-```
-
-**方式二：从后端目录启动（推荐）**
+### 开发模式
 ```bash
 cargo tauri dev
 ```
 
-### 4. 构建生产版本
-
+### 构建应用
 ```bash
 cargo tauri build
 ```
+
+## 🛠️ 技术栈
+
+**前端**
+- Vue 3 + TypeScript
+- Pinia 状态管理
+- CodeMirror SQL编辑器
+- SCSS样式
+
+**后端**
+- Rust + Tauri 2.0
+- 异步数据库连接
+- RESTful API设计
+
+**数据库驱动**
+- MySQL: `mysql_async`
+- Redis: `redis`
+- MongoDB: `mongodb`
+- PostgreSQL: `tokio-postgres`
+
+## 📋 系统要求
+
+- Rust 1.89.0+
+- Node.js 18+
+- Windows 10+ / macOS 10.15+ / Linux
+
+## 🔧 开发
+
+### 项目结构
+```
+qusc-db/
+├── src/                 # Vue 前端源码
+├── src-tauri/          # Rust 后端源码
+├── public/             # 静态资源
+└── dist/               # 构建输出
+```
+
+
+## 📝 更新日志
+
+### v0.2.0 (当前版本)
+- ✅ 完善数据库连接管理
+- ✅ 优化右键菜单系统
+- ✅ 改进用户界面响应性
+- ✅ 添加功能开发状态提示
+- ✅ 修复MongoDB菜单显示问题
+
+### v0.1.0
+- 🎉 首个版本发布
+- 📦 基础数据库连接功能
+- 🤖 AI助手集成
+
+## 🤝 贡献
+
+欢迎提交 Issues 和 Pull Requests！

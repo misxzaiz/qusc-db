@@ -1,6 +1,6 @@
 [package]
 name = "qusc-db"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # 使用默认的源代码路径 src/main.rs
